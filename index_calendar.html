@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendrier Collaboratif</title>
+    
+    <!-- README et Instructions -->
+    <style>
+        .readme {
+            background: #f4f4f4;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 15px;
+            border-radius: 8px;
+            font-family: sans-serif;
+        }
+        .readme h2 { margin-top: 0; }
+        .readme code { background: #eee; padding: 2px 4px; border-radius: 4px; }
+    </style>
+    
+    <!-- FullCalendar CDN -->
+    <script src=\'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js\'></script>
+    
+    <!-- Firebase CDN -->
+    <script src=\'https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js\'></script>
+    <script src=\'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js\'></script>
+    <script src=\'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js\'></script>
+    
+    <style>
+        /* Styles généraux */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f9fafb;
+            color: #111827;
+            margin: 0;
+            padding: 1rem;
+        }
+        
+        /* Styles du calendrier */
+        #calendar {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Styles de la modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 8px;
+        }
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        /* Styles des notifications */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            z-index: 1001;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        .toast.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="readme">
+        <h2>Calendrier Collaboratif - Instructions</h2>
+        <p>Cette application permet de gérer des événements dans un calendrier partagé en temps réel.</p>
+        
+        <h3>Configuration Firebase</h3>
+        <ol>
+            <li>Créez un projet sur <a href=\'https://console.firebase.google.com/\'>la console Firebase</a>.</li>
+            <li>Ajoutez une application web à votre projet.</li>
+            <li>Copiez la configuration Firebase (<code>firebaseConfig</code>) et collez-la dans la section <code>// TODO: CONFIG FIREBASE</code> du code JavaScript.</li>
+            <li>Activez l\'authentification anonyme : Allez dans <strong>Authentication > Sign-in method</strong> et activez <strong>Anonymous</strong>.</li>
+            <li>Configurez Firestore : Allez dans <strong>Firestore Database</strong>, créez une base de données en mode production, puis allez dans l\'onglet <strong>Rules</strong> et collez les règles suivantes pour les tests :</li>
+        </ol>
+        <pre><code>rules_version = \'2\';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /events/{eventId} {
+      allow read, write: if true; // Pour les tests, à sécuriser en production
+    }
+  }
+}</code></pre>
+
+        <h3>Lancement Local</h3>
+        <p>Ouvrez simplement ce fichier <code>.html</code> dans votre navigateur. Si Firebase n\'est pas configuré, l\'application utilisera le <code>localStorage</code> de votre navigateur (mode mono-utilisateur).</p>
+    </div>
+
+    <div id=\'calendar\'></div>
+
+    <!-- Modal pour l\'édition d\'événements -->
+    <div id="eventModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h3 id="modalTitle">Ajouter/Modifier un événement</h3>
+            <form id="eventForm">
+                <input type="hidden" id="eventId">
+                <p><label for="eventTitle">Titre:</label><br><input type="text" id="eventTitle" required style=\'width: 95%\'></p>
+                <p><label for="eventDesc">Description:</label><br><textarea id="eventDesc" style=\'width: 95%\'></textarea></p>
+                <p><label for="eventStart">Début:</label><br><input type="datetime-local" id="eventStart" required></p>
+                <p><label for="eventEnd">Fin:</label><br><input type="datetime-local" id="eventEnd" required></p>
+                <p><label for="eventColor">Couleur:</label><br><input type="color" id="eventColor" value="#3788d8"></p>
+                <p><label for="eventParticipants">Participants (séparés par des virgules):</label><br><input type="text" id="eventParticipants" style=\'width: 95%\'></p>
+                <br>
+                <button type="submit">Sauvegarder</button>
+                <button type="button" id="deleteEventButton">Supprimer</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Conteneur pour les notifications -->
+    <div id="toast-container"></div>
+
+    <script>
+        document.addEventListener(\'DOMContentLoaded\', function() {
+            // ========================================================================
+            // CONFIGURATION ET INITIALISATION
+            // ========================================================================
+
+            // TODO: CONFIG FIREBASE
+            // Remplacez cet objet par votre configuration Firebase
+            const firebaseConfig = {
+                apiKey: "VOTRE_API_KEY",
+                authDomain: "VOTRE_AUTH_DOMAIN",
+                projectId: "VOTRE_PROJECT_ID",
+                storageBucket: "VOTRE_STORAGE_BUCKET",
+                messagingSenderId: "VOTRE_MESSAGING_SENDER_ID",
+                appId: "VOTRE_APP_ID"
+            };
+
+            let firebaseApp;
+            let firestore;
+            let useFirebase = false;
+
+            try {
+                if (firebaseConfig.apiKey !== "VOTRE_API_KEY") {
+                    firebaseApp = firebase.initializeApp(firebaseConfig);
+                    firestore = firebase.firestore();
+                    useFirebase = true;
+                    console.log("Firebase initialisé.");
+                } else {
+                    console.log("Configuration Firebase non trouvée. Utilisation du localStorage.");
+                }
+            } catch (e) {
+                console.error("Erreur d\'initialisation de Firebase: ", e);
+            }
+
+            // Authentification anonyme
+            let currentUser = null;
+            if (useFirebase) {
+                firebase.auth().signInAnonymously()
+                    .then((userCredential) => {
+                        currentUser = userCredential.user;
+                        console.log("Utilisateur anonyme connecté: ", currentUser.uid);
+                    })
+                    .catch((error) => {
+                        console.error("Erreur d\'authentification anonyme: ", error);
+                    });
+            }
+
+            // ========================================================================
+            // INITIALISATION DE FULLCALENDAR
+            // ========================================================================
+
+            const calendarEl = document.getElementById(\'calendar\');
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: \'dayGridMonth\',
+                initialDate: \'2025-09-17\',
+                headerToolbar: {
+                    left: \'prev,next today\',
+                    center: \'title\',
+                    right: \'dayGridMonth,timeGridWeek,timeGridDay\'
+                },
+                editable: true,
+                selectable: true,
+                events: [], // Les événements seront chargés depuis la source
+                
+                // Plage de dates valide
+                validRange: {
+                    start: \'2025-09-17\',
+                    end: \'2025-12-31\'
+                },
+
+                // ========================================================================
+                // GESTION DES ÉVÉNEMENTS (CRUD)
+                // ========================================================================
+
+                // Créer un événement
+                select: function(info) {
+                    openModal(info);
+                },
+
+                // Lire/Modifier un événement
+                eventClick: function(info) {
+                    openModal(info.event);
+                },
+
+                // Drag & Drop
+                eventDrop: function(info) {
+                    updateEvent(info.event);
+                },
+
+                // Redimensionnement
+                eventResize: function(info) {
+                    updateEvent(info.event);
+                }
+            });
+
+            calendar.render();
+
+            // ========================================================================
+            // GESTION DE LA PERSISTANCE (FIREBASE / LOCALSTORAGE)
+            // ========================================================================
+
+            if (useFirebase) {
+                // Écoute en temps réel des changements sur Firestore
+                firestore.collection(\'events\').onSnapshot(snapshot => {
+                    const events = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    calendar.removeAllEvents();
+                    calendar.addEventSource(events);
+                    showToast("Calendrier synchronisé.");
+                }, error => {
+                    console.error("Erreur de synchronisation Firestore: ", error);
+                    showToast("Erreur de synchronisation.", true);
+                });
+            } else {
+                // Chargement depuis le localStorage
+                const localEvents = JSON.parse(localStorage.getItem(\'calendarEvents\') || \'[]\');
+                calendar.addEventSource(localEvents);
+            }
+
+            function saveEvent(eventData) {
+                if (useFirebase) {
+                    if (eventData.id) {
+                        firestore.collection(\'events\').doc(eventData.id).update(eventData).then(() => {
+                            showToast(`\'${eventData.title}\' mis à jour par ${currentUser.uid.substring(0, 5)}`);
+                        });
+                    } else {
+                        firestore.collection(\'events\').add(eventData).then(() => {
+                            showToast(`\'${eventData.title}\' ajouté par ${currentUser.uid.substring(0, 5)}`);
+                        });
+                    }
+                } else {
+                    let events = JSON.parse(localStorage.getItem(\'calendarEvents\') || \'[]\');
+                    if (eventData.id) {
+                        events = events.map(e => e.id === eventData.id ? eventData : e);
+                    } else {
+                        eventData.id = Date.now().toString();
+                        events.push(eventData);
+                    }
+                    localStorage.setItem(\'calendarEvents\', JSON.stringify(events));
+                    calendar.removeAllEvents();
+                    calendar.addEventSource(events);
+                }
+            }
+
+            function updateEvent(event) {
+                const eventData = {
+                    id: event.id,
+                    title: event.title,
+                    start: event.start.toISOString(),
+                    end: event.end ? event.end.toISOString() : null,
+                    color: event.backgroundColor,
+                    description: event.extendedProps.description || \'\',
+                    participants: event.extendedProps.participants || []
+                };
+                saveEvent(eventData);
+            }
+
+            function deleteEvent(eventId) {
+                if (useFirebase) {
+                    firestore.collection(\'events\').doc(eventId).delete().then(() => {
+                        showToast("Événement supprimé.");
+                    });
+                } else {
+                    let events = JSON.parse(localStorage.getItem(\'calendarEvents\') || \'[]\');
+                    events = events.filter(e => e.id !== eventId);
+                    localStorage.setItem(\'calendarEvents\', JSON.stringify(events));
+                    calendar.getEventById(eventId).remove();
+                }
+            }
+
+            // ========================================================================
+            // GESTION DE LA MODAL
+            // ========================================================================
+
+            const modal = document.getElementById(\'eventModal\');
+            const closeButton = document.querySelector(\'#eventModal .close-button\');
+            const eventForm = document.getElementById(\'eventForm\');
+            const deleteButton = document.getElementById(\'deleteEventButton\');
+
+            function openModal(data) {
+                if (data.id) { // C\'est un événement existant
+                    document.getElementById(\'modalTitle\').innerText = \'Modifier l\\'événement\';
+                    document.getElementById(\'eventId\').value = data.id;
+                    document.getElementById(\'eventTitle\').value = data.title;
+                    document.getElementById(\'eventDesc\').value = data.extendedProps.description || \'\';
+                    document.getElementById(\'eventStart\').value = data.start.toISOString().substring(0, 16);
+                    document.getElementById(\'eventEnd\').value = data.end ? data.end.toISOString().substring(0, 16) : \'\';
+                    document.getElementById(\'eventColor\').value = data.backgroundColor || \'#3788d8\';
+                    document.getElementById(\'eventParticipants\').value = (data.extendedProps.participants || []).join(\, \');
+                    deleteButton.style.display = \'inline-block\';
+                } else { // C\'est un nouvel événement
+                    document.getElementById(\'modalTitle\').innerText = \'Ajouter un événement\';
+                    document.getElementById(\'eventId\').value = \'\';
+                    document.getElementById(\'eventForm\').reset();
+                    document.getElementById(\'eventStart\').value = data.startStr + \'T12:00\';
+                    document.getElementById(\'eventEnd\').value = data.endStr ? data.endStr + \'T13:00\' : data.startStr + \'T13:00\';
+                    deleteButton.style.display = \'none\';
+                }
+                modal.style.display = \'block\';
+            }
+
+            closeButton.onclick = () => modal.style.display = \'none\';
+            window.onclick = (event) => {
+                if (event.target == modal) {
+                    modal.style.display = \'none\';
+                }
+            };
+
+            eventForm.onsubmit = (e) => {
+                e.preventDefault();
+                const eventData = {
+                    id: document.getElementById(\'eventId\').value,
+                    title: document.getElementById(\'eventTitle\').value,
+                    start: document.getElementById(\'eventStart\').value,
+                    end: document.getElementById(\'eventEnd\').value,
+                    color: document.getElementById(\'eventColor\').value,
+                    description: document.getElementById(\'eventDesc\').value,
+                    participants: document.getElementById(\'eventParticipants\').value.split(\,\').map(p => p.trim())
+                };
+                saveEvent(eventData);
+                modal.style.display = \'none\';
+            };
+
+            deleteButton.onclick = () => {
+                const eventId = document.getElementById(\'eventId\').value;
+                if (confirm(\'Êtes-vous sûr de vouloir supprimer cet événement ?\')) {
+                    deleteEvent(eventId);
+                    modal.style.display = \'none\';
+                }
+            };
+
+            // ========================================================================
+            // FONCTIONS UTILITAIRES
+            // ========================================================================
+
+            function showToast(message, isError = false) {
+                const container = document.getElementById(\'toast-container\');
+                const toast = document.createElement(\'div\');
+                toast.className = \'toast\';
+                if (isError) toast.style.backgroundColor = \'#ef4444\';
+                toast.innerText = message;
+                container.appendChild(toast);
+                
+                setTimeout(() => {
+                    toast.classList.add(\'show\');
+                }, 100);
+
+                setTimeout(() => {
+                    toast.classList.remove(\'show\');
+                    setTimeout(() => container.removeChild(toast), 500);
+                }, 3000);
+            }
+        });
+
+        /*
+        Résumé des dépendances externes :
+        - FullCalendar (JS) : https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js
+        - Firebase (JS) : 
+            - https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js
+            - https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js
+            - https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js
+
+        Exemple de configuration Firebase (firebaseConfig) :
+        {
+            apiKey: "AIzaSy...",
+            authDomain: "votre-projet.firebaseapp.com",
+            projectId: "votre-projet",
+            storageBucket: "votre-projet.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234567890:web:abcdef123456"
+        }
+        */
+    </script>
+
+</body>
+</html>
+
+
