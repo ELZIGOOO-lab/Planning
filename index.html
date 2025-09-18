@@ -20,12 +20,12 @@
     </style>
     
     <!-- FullCalendar CDN -->
-    <script src=\'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js\'></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
     
     <!-- Firebase CDN -->
-    <script src=\'https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js\'></script>
-    <script src=\'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js\'></script>
-    <script src=\'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js\'></script>
+    <script src='https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js'></script>
+    <script src='https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js'></script>
+    <script src='https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js'></script>
     
     <style>
         /* Styles généraux */
@@ -37,10 +37,63 @@
             padding: 1rem;
         }
         
+        /* Conteneur principal */
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        /* Barre d'outils */
+        .toolbar {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .toolbar input, .toolbar select, .toolbar button {
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+        
+        .toolbar button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .toolbar button:hover {
+            background: #2563eb;
+        }
+        
+        /* Indicateur de statut */
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .status-online { background-color: #10b981; }
+        .status-offline { background-color: #ef4444; }
+        
         /* Styles du calendrier */
         #calendar {
-            max-width: 1100px;
-            margin: 0 auto;
             background: white;
             padding: 1.5rem;
             border-radius: 8px;
@@ -59,21 +112,96 @@
             overflow: auto;
             background-color: rgba(0,0,0,0.4);
         }
+        
         .modal-content {
             background-color: #fefefe;
-            margin: 10% auto;
+            margin: 5% auto;
             padding: 20px;
             border: 1px solid #888;
-            width: 80%;
+            width: 90%;
             max-width: 500px;
             border-radius: 8px;
+            max-height: 80vh;
+            overflow-y: auto;
         }
+        
         .close-button {
             color: #aaa;
             float: right;
             font-size: 28px;
             font-weight: bold;
             cursor: pointer;
+        }
+        
+        .close-button:hover {
+            color: #000;
+        }
+        
+        /* Styles des formulaires */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+        }
+        
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+            margin-top: 1rem;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #4b5563;
         }
         
         /* Styles des notifications */
@@ -89,27 +217,77 @@
             z-index: 1001;
             opacity: 0;
             transition: opacity 0.5s;
+            max-width: 400px;
         }
+        
         .toast.show {
             opacity: 1;
+        }
+        
+        .toast.error {
+            background-color: #ef4444;
+        }
+        
+        .toast.success {
+            background-color: #10b981;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 0.5rem;
+            }
+            
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .toolbar > * {
+                width: 100%;
+            }
+            
+            .modal-content {
+                margin: 2% auto;
+                width: 95%;
+            }
+        }
+        
+        /* Accessibilité */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        
+        /* Focus visible pour l'accessibilité */
+        button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
         }
     </style>
 </head>
 <body>
 
     <div class="readme">
-        <h2>Calendrier Collaboratif - Instructions</h2>
-        <p>Cette application permet de gérer des événements dans un calendrier partagé en temps réel.</p>
+        <h2>📅 Calendrier Collaboratif - Instructions</h2>
+        <p>Cette application permet de gérer des événements dans un calendrier partagé en temps réel entre plusieurs utilisateurs.</p>
         
-        <h3>Configuration Firebase</h3>
+        <h3>🔧 Configuration Firebase</h3>
         <ol>
-            <li>Créez un projet sur <a href=\'https://console.firebase.google.com/\'>la console Firebase</a>.</li>
+            <li>Créez un projet sur <a href='https://console.firebase.google.com/' target='_blank' rel='noopener'>la console Firebase</a>.</li>
             <li>Ajoutez une application web à votre projet.</li>
             <li>Copiez la configuration Firebase (<code>firebaseConfig</code>) et collez-la dans la section <code>// TODO: CONFIG FIREBASE</code> du code JavaScript.</li>
-            <li>Activez l\'authentification anonyme : Allez dans <strong>Authentication > Sign-in method</strong> et activez <strong>Anonymous</strong>.</li>
-            <li>Configurez Firestore : Allez dans <strong>Firestore Database</strong>, créez une base de données en mode production, puis allez dans l\'onglet <strong>Rules</strong> et collez les règles suivantes pour les tests :</li>
+            <li>Activez l'authentification anonyme : Allez dans <strong>Authentication > Sign-in method</strong> et activez <strong>Anonymous</strong>.</li>
+            <li>Configurez Firestore : Allez dans <strong>Firestore Database</strong>, créez une base de données en mode production, puis allez dans l'onglet <strong>Rules</strong> et collez les règles suivantes pour les tests :</li>
         </ol>
-        <pre><code>rules_version = \'2\';
+        <pre><code>rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /events/{eventId} {
@@ -118,37 +296,114 @@ service cloud.firestore {
   }
 }</code></pre>
 
-        <h3>Lancement Local</h3>
-        <p>Ouvrez simplement ce fichier <code>.html</code> dans votre navigateur. Si Firebase n\'est pas configuré, l\'application utilisera le <code>localStorage</code> de votre navigateur (mode mono-utilisateur).</p>
+        <h3>🚀 Lancement Local</h3>
+        <p>Ouvrez simplement ce fichier <code>.html</code> dans votre navigateur. Si Firebase n'est pas configuré, l'application utilisera le <code>localStorage</code> de votre navigateur (mode mono-utilisateur).</p>
+        
+        <h3>✨ Fonctionnalités</h3>
+        <ul>
+            <li><strong>Vues multiples</strong> : Mois, semaine, jour</li>
+            <li><strong>Collaboration temps réel</strong> : Synchronisation automatique entre utilisateurs</li>
+            <li><strong>Drag & Drop</strong> : Déplacez et redimensionnez les événements</li>
+            <li><strong>Filtrage et recherche</strong> : Par couleur et texte</li>
+            <li><strong>Export/Import JSON</strong> : Sauvegarde locale</li>
+            <li><strong>Responsive</strong> : Compatible mobile, tablette, desktop</li>
+        </ul>
     </div>
 
-    <div id=\'calendar\'></div>
+    <div class="app-container">
+        <!-- Barre d'outils -->
+        <div class="toolbar" role="toolbar" aria-label="Outils du calendrier">
+            <div class="status-indicator">
+                <div class="status-dot status-offline" id="statusDot" aria-hidden="true"></div>
+                <span id="statusText">Hors ligne</span>
+            </div>
+            
+            <input type="text" id="searchInput" placeholder="Rechercher des événements..." 
+                   aria-label="Rechercher des événements">
+            
+            <select id="colorFilter" aria-label="Filtrer par couleur">
+                <option value="">Toutes les couleurs</option>
+                <option value="#3788d8">Bleu</option>
+                <option value="#28a745">Vert</option>
+                <option value="#dc3545">Rouge</option>
+                <option value="#ffc107">Jaune</option>
+                <option value="#6f42c1">Violet</option>
+                <option value="#fd7e14">Orange</option>
+            </select>
+            
+            <button id="exportBtn" class="btn btn-secondary" aria-label="Exporter les événements">
+                📥 Exporter
+            </button>
+            
+            <button id="importBtn" class="btn btn-secondary" aria-label="Importer des événements">
+                📤 Importer
+            </button>
+            <input type="file" id="importFile" accept=".json" style="display: none;" aria-label="Fichier à importer">
+        </div>
 
-    <!-- Modal pour l\'édition d\'événements -->
-    <div id="eventModal" class="modal">
+        <!-- Calendrier -->
+        <div id='calendar' role="application" aria-label="Calendrier des événements"></div>
+    </div>
+
+    <!-- Modal pour l'édition d'événements -->
+    <div id="eventModal" class="modal" role="dialog" aria-labelledby="modalTitle" aria-modal="true">
         <div class="modal-content">
-            <span class="close-button">&times;</span>
+            <span class="close-button" aria-label="Fermer la modal">&times;</span>
             <h3 id="modalTitle">Ajouter/Modifier un événement</h3>
             <form id="eventForm">
                 <input type="hidden" id="eventId">
-                <p><label for="eventTitle">Titre:</label><br><input type="text" id="eventTitle" required style=\'width: 95%\'></p>
-                <p><label for="eventDesc">Description:</label><br><textarea id="eventDesc" style=\'width: 95%\'></textarea></p>
-                <p><label for="eventStart">Début:</label><br><input type="datetime-local" id="eventStart" required></p>
-                <p><label for="eventEnd">Fin:</label><br><input type="datetime-local" id="eventEnd" required></p>
-                <p><label for="eventColor">Couleur:</label><br><input type="color" id="eventColor" value="#3788d8"></p>
-                <p><label for="eventParticipants">Participants (séparés par des virgules):</label><br><input type="text" id="eventParticipants" style=\'width: 95%\'></p>
-                <br>
-                <button type="submit">Sauvegarder</button>
-                <button type="button" id="deleteEventButton">Supprimer</button>
+                
+                <div class="form-group">
+                    <label for="eventTitle">Titre *</label>
+                    <input type="text" id="eventTitle" required aria-required="true">
+                </div>
+                
+                <div class="form-group">
+                    <label for="eventDesc">Description</label>
+                    <textarea id="eventDesc" placeholder="Description de l'événement..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="eventStart">Date et heure de début *</label>
+                    <input type="datetime-local" id="eventStart" required aria-required="true">
+                </div>
+                
+                <div class="form-group">
+                    <label for="eventEnd">Date et heure de fin *</label>
+                    <input type="datetime-local" id="eventEnd" required aria-required="true">
+                </div>
+                
+                <div class="form-group">
+                    <label for="eventColor">Couleur</label>
+                    <select id="eventColor">
+                        <option value="#3788d8">Bleu</option>
+                        <option value="#28a745">Vert</option>
+                        <option value="#dc3545">Rouge</option>
+                        <option value="#ffc107">Jaune</option>
+                        <option value="#6f42c1">Violet</option>
+                        <option value="#fd7e14">Orange</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="eventParticipants">Participants (séparés par des virgules)</label>
+                    <input type="text" id="eventParticipants" placeholder="Jean, Marie, Pierre...">
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" id="cancelButton" class="btn btn-secondary">Annuler</button>
+                    <button type="button" id="deleteEventButton" class="btn btn-danger" style="display: none;">Supprimer</button>
+                    <button type="submit" class="btn btn-primary">Sauvegarder</button>
+                </div>
             </form>
         </div>
     </div>
 
     <!-- Conteneur pour les notifications -->
-    <div id="toast-container"></div>
+    <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
 
     <script>
-        document.addEventListener(\'DOMContentLoaded\', function() {
+        document.addEventListener('DOMContentLoaded', function() {
             // ========================================================================
             // CONFIGURATION ET INITIALISATION
             // ========================================================================
@@ -167,30 +422,38 @@ service cloud.firestore {
             let firebaseApp;
             let firestore;
             let useFirebase = false;
+            let currentUser = null;
+            let allEvents = []; // Cache local de tous les événements
 
+            // Initialisation Firebase
             try {
                 if (firebaseConfig.apiKey !== "VOTRE_API_KEY") {
                     firebaseApp = firebase.initializeApp(firebaseConfig);
                     firestore = firebase.firestore();
                     useFirebase = true;
+                    updateStatus(true);
                     console.log("Firebase initialisé.");
                 } else {
                     console.log("Configuration Firebase non trouvée. Utilisation du localStorage.");
+                    updateStatus(false);
                 }
             } catch (e) {
-                console.error("Erreur d\'initialisation de Firebase: ", e);
+                console.error("Erreur d'initialisation de Firebase: ", e);
+                updateStatus(false);
             }
 
             // Authentification anonyme
-            let currentUser = null;
             if (useFirebase) {
                 firebase.auth().signInAnonymously()
                     .then((userCredential) => {
                         currentUser = userCredential.user;
                         console.log("Utilisateur anonyme connecté: ", currentUser.uid);
+                        showToast(`Connecté en tant qu'utilisateur ${currentUser.uid.substring(0, 8)}`, 'success');
                     })
                     .catch((error) => {
-                        console.error("Erreur d\'authentification anonyme: ", error);
+                        console.error("Erreur d'authentification anonyme: ", error);
+                        showToast("Erreur de connexion", 'error');
+                        updateStatus(false);
                     });
             }
 
@@ -198,47 +461,63 @@ service cloud.firestore {
             // INITIALISATION DE FULLCALENDAR
             // ========================================================================
 
-            const calendarEl = document.getElementById(\'calendar\');
+            const calendarEl = document.getElementById('calendar');
             const calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: \'dayGridMonth\',
-                initialDate: \'2025-09-17\',
+                initialView: 'dayGridMonth',
+                initialDate: '2025-09-17',
+                locale: 'fr',
                 headerToolbar: {
-                    left: \'prev,next today\',
-                    center: \'title\',
-                    right: \'dayGridMonth,timeGridWeek,timeGridDay\'
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
                 },
                 editable: true,
                 selectable: true,
-                events: [], // Les événements seront chargés depuis la source
+                selectMirror: true,
+                dayMaxEvents: true,
+                weekends: true,
+                events: [],
                 
-                // Plage de dates valide
+                // Plage de dates valide (17 septembre 2025 au 31 décembre 2025)
                 validRange: {
-                    start: \'2025-09-17\',
-                    end: \'2025-12-31\'
+                    start: '2025-09-17',
+                    end: '2026-01-01' // Fin exclusive
                 },
 
-                // ========================================================================
-                // GESTION DES ÉVÉNEMENTS (CRUD)
-                // ========================================================================
-
-                // Créer un événement
+                // Gestion des événements
                 select: function(info) {
-                    openModal(info);
+                    // Vérifier que la sélection est dans la plage valide
+                    if (isDateInValidRange(info.start)) {
+                        openModal(info);
+                    } else {
+                        showToast("Vous ne pouvez créer des événements qu'entre le 17 septembre et le 31 décembre 2025.", 'error');
+                    }
                 },
 
-                // Lire/Modifier un événement
                 eventClick: function(info) {
                     openModal(info.event);
                 },
 
-                // Drag & Drop
+                // Drag & Drop avec validation
                 eventDrop: function(info) {
-                    updateEvent(info.event);
+                    if (isDateInValidRange(info.event.start)) {
+                        updateEvent(info.event);
+                        showToast(`Événement "${info.event.title}" déplacé`, 'success');
+                    } else {
+                        info.revert();
+                        showToast("Impossible de déplacer l'événement en dehors de la période autorisée.", 'error');
+                    }
                 },
 
-                // Redimensionnement
+                // Redimensionnement avec validation
                 eventResize: function(info) {
-                    updateEvent(info.event);
+                    if (isDateInValidRange(info.event.start) && isDateInValidRange(info.event.end)) {
+                        updateEvent(info.event);
+                        showToast(`Durée de "${info.event.title}" modifiée`, 'success');
+                    } else {
+                        info.revert();
+                        showToast("Impossible de redimensionner l'événement en dehors de la période autorisée.", 'error');
+                    }
                 }
             });
 
@@ -250,43 +529,97 @@ service cloud.firestore {
 
             if (useFirebase) {
                 // Écoute en temps réel des changements sur Firestore
-                firestore.collection(\'events\').onSnapshot(snapshot => {
-                    const events = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    calendar.removeAllEvents();
-                    calendar.addEventSource(events);
-                    showToast("Calendrier synchronisé.");
+                firestore.collection('events').onSnapshot(snapshot => {
+                    allEvents = [];
+                    snapshot.docs.forEach(doc => {
+                        const eventData = { id: doc.id, ...doc.data() };
+                        allEvents.push(eventData);
+                    });
+                    
+                    // Appliquer les filtres et mettre à jour le calendrier
+                    applyFilters();
+                    
+                    if (snapshot.metadata.fromCache) {
+                        updateStatus(false);
+                    } else {
+                        updateStatus(true);
+                        showToast("Calendrier synchronisé", 'success');
+                    }
                 }, error => {
                     console.error("Erreur de synchronisation Firestore: ", error);
-                    showToast("Erreur de synchronisation.", true);
+                    showToast("Erreur de synchronisation", 'error');
+                    updateStatus(false);
                 });
             } else {
                 // Chargement depuis le localStorage
-                const localEvents = JSON.parse(localStorage.getItem(\'calendarEvents\') || \'[]\');
-                calendar.addEventSource(localEvents);
+                loadFromLocalStorage();
+            }
+
+            function loadFromLocalStorage() {
+                const localEvents = JSON.parse(localStorage.getItem('calendarEvents') || '[]');
+                allEvents = localEvents;
+                applyFilters();
             }
 
             function saveEvent(eventData) {
+                // Validation des données
+                if (!eventData.title || !eventData.start || !eventData.end) {
+                    showToast("Veuillez remplir tous les champs obligatoires.", 'error');
+                    return;
+                }
+
+                // Validation des dates
+                const startDate = new Date(eventData.start);
+                const endDate = new Date(eventData.end);
+                
+                if (endDate <= startDate) {
+                    showToast("La date de fin doit être postérieure à la date de début.", 'error');
+                    return;
+                }
+
+                if (!isDateInValidRange(startDate) || !isDateInValidRange(endDate)) {
+                    showToast("Les événements doivent être entre le 17 septembre et le 31 décembre 2025.", 'error');
+                    return;
+                }
+
+                // Ajout de métadonnées
+                eventData.lastModified = new Date().toISOString();
+                eventData.modifiedBy = currentUser ? currentUser.uid : 'local-user';
+
                 if (useFirebase) {
                     if (eventData.id) {
-                        firestore.collection(\'events\').doc(eventData.id).update(eventData).then(() => {
-                            showToast(`\'${eventData.title}\' mis à jour par ${currentUser.uid.substring(0, 5)}`);
-                        });
+                        // Mise à jour
+                        firestore.collection('events').doc(eventData.id).update(eventData)
+                            .then(() => {
+                                showToast(`"${eventData.title}" mis à jour`, 'success');
+                            })
+                            .catch(error => {
+                                console.error("Erreur de mise à jour: ", error);
+                                showToast("Erreur de mise à jour", 'error');
+                            });
                     } else {
-                        firestore.collection(\'events\').add(eventData).then(() => {
-                            showToast(`\'${eventData.title}\' ajouté par ${currentUser.uid.substring(0, 5)}`);
-                        });
+                        // Création
+                        firestore.collection('events').add(eventData)
+                            .then(() => {
+                                showToast(`"${eventData.title}" ajouté`, 'success');
+                            })
+                            .catch(error => {
+                                console.error("Erreur de création: ", error);
+                                showToast("Erreur de création", 'error');
+                            });
                     }
                 } else {
-                    let events = JSON.parse(localStorage.getItem(\'calendarEvents\') || \'[]\');
+                    // Sauvegarde locale
+                    let events = JSON.parse(localStorage.getItem('calendarEvents') || '[]');
                     if (eventData.id) {
                         events = events.map(e => e.id === eventData.id ? eventData : e);
                     } else {
-                        eventData.id = Date.now().toString();
+                        eventData.id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
                         events.push(eventData);
                     }
-                    localStorage.setItem(\'calendarEvents\', JSON.stringify(events));
-                    calendar.removeAllEvents();
-                    calendar.addEventSource(events);
+                    localStorage.setItem('calendarEvents', JSON.stringify(events));
+                    loadFromLocalStorage();
+                    showToast(`"${eventData.title}" sauvegardé localement`, 'success');
                 }
             }
 
@@ -296,8 +629,8 @@ service cloud.firestore {
                     title: event.title,
                     start: event.start.toISOString(),
                     end: event.end ? event.end.toISOString() : null,
-                    color: event.backgroundColor,
-                    description: event.extendedProps.description || \'\',
+                    color: event.backgroundColor || event.color,
+                    description: event.extendedProps.description || '',
                     participants: event.extendedProps.participants || []
                 };
                 saveEvent(eventData);
@@ -305,14 +638,20 @@ service cloud.firestore {
 
             function deleteEvent(eventId) {
                 if (useFirebase) {
-                    firestore.collection(\'events\').doc(eventId).delete().then(() => {
-                        showToast("Événement supprimé.");
-                    });
+                    firestore.collection('events').doc(eventId).delete()
+                        .then(() => {
+                            showToast("Événement supprimé", 'success');
+                        })
+                        .catch(error => {
+                            console.error("Erreur de suppression: ", error);
+                            showToast("Erreur de suppression", 'error');
+                        });
                 } else {
-                    let events = JSON.parse(localStorage.getItem(\'calendarEvents\') || \'[]\');
+                    let events = JSON.parse(localStorage.getItem('calendarEvents') || '[]');
                     events = events.filter(e => e.id !== eventId);
-                    localStorage.setItem(\'calendarEvents\', JSON.stringify(events));
-                    calendar.getEventById(eventId).remove();
+                    localStorage.setItem('calendarEvents', JSON.stringify(events));
+                    loadFromLocalStorage();
+                    showToast("Événement supprimé", 'success');
                 }
             }
 
@@ -320,107 +659,303 @@ service cloud.firestore {
             // GESTION DE LA MODAL
             // ========================================================================
 
-            const modal = document.getElementById(\'eventModal\');
-            const closeButton = document.querySelector(\'#eventModal .close-button\');
-            const eventForm = document.getElementById(\'eventForm\');
-            const deleteButton = document.getElementById(\'deleteEventButton\');
+            const modal = document.getElementById('eventModal');
+            const closeButton = document.querySelector('#eventModal .close-button');
+            const eventForm = document.getElementById('eventForm');
+            const deleteButton = document.getElementById('deleteEventButton');
+            const cancelButton = document.getElementById('cancelButton');
 
             function openModal(data) {
-                if (data.id) { // C\'est un événement existant
-                    document.getElementById(\'modalTitle\').innerText = \'Modifier l\\'événement\';
-                    document.getElementById(\'eventId\').value = data.id;
-                    document.getElementById(\'eventTitle\').value = data.title;
-                    document.getElementById(\'eventDesc\').value = data.extendedProps.description || \'\';
-                    document.getElementById(\'eventStart\').value = data.start.toISOString().substring(0, 16);
-                    document.getElementById(\'eventEnd\').value = data.end ? data.end.toISOString().substring(0, 16) : \'\';
-                    document.getElementById(\'eventColor\').value = data.backgroundColor || \'#3788d8\';
-                    document.getElementById(\'eventParticipants\').value = (data.extendedProps.participants || []).join(\, \');
-                    deleteButton.style.display = \'inline-block\';
-                } else { // C\'est un nouvel événement
-                    document.getElementById(\'modalTitle\').innerText = \'Ajouter un événement\';
-                    document.getElementById(\'eventId\').value = \'\';
-                    document.getElementById(\'eventForm\').reset();
-                    document.getElementById(\'eventStart\').value = data.startStr + \'T12:00\';
-                    document.getElementById(\'eventEnd\').value = data.endStr ? data.endStr + \'T13:00\' : data.startStr + \'T13:00\';
-                    deleteButton.style.display = \'none\';
+                if (data.id) {
+                    // Modification d'un événement existant
+                    document.getElementById('modalTitle').innerText = 'Modifier l\'événement';
+                    document.getElementById('eventId').value = data.id;
+                    document.getElementById('eventTitle').value = data.title;
+                    document.getElementById('eventDesc').value = data.extendedProps.description || '';
+                    document.getElementById('eventStart').value = formatDateTimeLocal(data.start);
+                    document.getElementById('eventEnd').value = data.end ? formatDateTimeLocal(data.end) : '';
+                    document.getElementById('eventColor').value = data.backgroundColor || data.color || '#3788d8';
+                    document.getElementById('eventParticipants').value = (data.extendedProps.participants || []).join(', ');
+                    deleteButton.style.display = 'inline-block';
+                } else {
+                    // Création d'un nouvel événement
+                    document.getElementById('modalTitle').innerText = 'Ajouter un événement';
+                    document.getElementById('eventId').value = '';
+                    eventForm.reset();
+                    
+                    // Définir les dates par défaut
+                    const startDate = new Date(data.startStr + 'T12:00');
+                    const endDate = new Date(data.endStr ? data.endStr + 'T13:00' : data.startStr + 'T13:00');
+                    
+                    document.getElementById('eventStart').value = formatDateTimeLocal(startDate);
+                    document.getElementById('eventEnd').value = formatDateTimeLocal(endDate);
+                    document.getElementById('eventColor').value = '#3788d8';
+                    deleteButton.style.display = 'none';
                 }
-                modal.style.display = \'block\';
+                
+                modal.style.display = 'block';
+                document.getElementById('eventTitle').focus();
             }
 
-            closeButton.onclick = () => modal.style.display = \'none\';
+            function closeModal() {
+                modal.style.display = 'none';
+            }
+
+            // Gestionnaires d'événements pour la modal
+            closeButton.onclick = closeModal;
+            cancelButton.onclick = closeModal;
+            
             window.onclick = (event) => {
-                if (event.target == modal) {
-                    modal.style.display = \'none\';
+                if (event.target === modal) {
+                    closeModal();
                 }
             };
+
+            // Gestion de l'échappement pour fermer la modal
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && modal.style.display === 'block') {
+                    closeModal();
+                }
+            });
 
             eventForm.onsubmit = (e) => {
                 e.preventDefault();
+                
                 const eventData = {
-                    id: document.getElementById(\'eventId\').value,
-                    title: document.getElementById(\'eventTitle\').value,
-                    start: document.getElementById(\'eventStart\').value,
-                    end: document.getElementById(\'eventEnd\').value,
-                    color: document.getElementById(\'eventColor\').value,
-                    description: document.getElementById(\'eventDesc\').value,
-                    participants: document.getElementById(\'eventParticipants\').value.split(\,\').map(p => p.trim())
+                    id: document.getElementById('eventId').value,
+                    title: document.getElementById('eventTitle').value.trim(),
+                    start: document.getElementById('eventStart').value,
+                    end: document.getElementById('eventEnd').value,
+                    color: document.getElementById('eventColor').value,
+                    description: document.getElementById('eventDesc').value.trim(),
+                    participants: document.getElementById('eventParticipants').value
+                        .split(',')
+                        .map(p => p.trim())
+                        .filter(p => p.length > 0)
                 };
+                
                 saveEvent(eventData);
-                modal.style.display = \'none\';
+                closeModal();
             };
 
             deleteButton.onclick = () => {
-                const eventId = document.getElementById(\'eventId\').value;
-                if (confirm(\'Êtes-vous sûr de vouloir supprimer cet événement ?\')) {
+                const eventId = document.getElementById('eventId').value;
+                const eventTitle = document.getElementById('eventTitle').value;
+                
+                if (confirm(`Êtes-vous sûr de vouloir supprimer l'événement "${eventTitle}" ?`)) {
                     deleteEvent(eventId);
-                    modal.style.display = \'none\';
+                    closeModal();
                 }
             };
+
+            // ========================================================================
+            // FILTRAGE ET RECHERCHE
+            // ========================================================================
+
+            const searchInput = document.getElementById('searchInput');
+            const colorFilter = document.getElementById('colorFilter');
+
+            searchInput.addEventListener('input', applyFilters);
+            colorFilter.addEventListener('change', applyFilters);
+
+            function applyFilters() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const selectedColor = colorFilter.value;
+
+                let filteredEvents = allEvents.filter(event => {
+                    // Filtre par texte
+                    const matchesSearch = !searchTerm || 
+                        event.title.toLowerCase().includes(searchTerm) ||
+                        (event.description && event.description.toLowerCase().includes(searchTerm)) ||
+                        (event.participants && event.participants.some(p => p.toLowerCase().includes(searchTerm)));
+
+                    // Filtre par couleur
+                    const matchesColor = !selectedColor || event.color === selectedColor;
+
+                    return matchesSearch && matchesColor;
+                });
+
+                // Mettre à jour le calendrier
+                calendar.removeAllEvents();
+                calendar.addEventSource(filteredEvents);
+            }
+
+            // ========================================================================
+            // EXPORT / IMPORT JSON
+            // ========================================================================
+
+            const exportBtn = document.getElementById('exportBtn');
+            const importBtn = document.getElementById('importBtn');
+            const importFile = document.getElementById('importFile');
+
+            exportBtn.addEventListener('click', exportEvents);
+            importBtn.addEventListener('click', () => importFile.click());
+            importFile.addEventListener('change', importEvents);
+
+            function exportEvents() {
+                const dataStr = JSON.stringify(allEvents, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(dataBlob);
+                link.download = `calendrier-events-${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+                
+                showToast(`${allEvents.length} événements exportés`, 'success');
+            }
+
+            function importEvents(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const importedEvents = JSON.parse(e.target.result);
+                        
+                        if (!Array.isArray(importedEvents)) {
+                            throw new Error("Le fichier doit contenir un tableau d'événements");
+                        }
+
+                        // Validation et import des événements
+                        let importedCount = 0;
+                        importedEvents.forEach(eventData => {
+                            if (eventData.title && eventData.start && eventData.end) {
+                                // Générer un nouvel ID pour éviter les conflits
+                                delete eventData.id;
+                                eventData.lastModified = new Date().toISOString();
+                                eventData.modifiedBy = currentUser ? currentUser.uid : 'imported';
+                                
+                                saveEvent(eventData);
+                                importedCount++;
+                            }
+                        });
+
+                        showToast(`${importedCount} événements importés avec succès`, 'success');
+                    } catch (error) {
+                        console.error("Erreur d'import: ", error);
+                        showToast("Erreur lors de l'import du fichier", 'error');
+                    }
+                };
+                reader.readAsText(file);
+                
+                // Reset du champ file
+                event.target.value = '';
+            }
 
             // ========================================================================
             // FONCTIONS UTILITAIRES
             // ========================================================================
 
-            function showToast(message, isError = false) {
-                const container = document.getElementById(\'toast-container\');
-                const toast = document.createElement(\'div\');
-                toast.className = \'toast\';
-                if (isError) toast.style.backgroundColor = \'#ef4444\';
-                toast.innerText = message;
+            function isDateInValidRange(date) {
+                const startRange = new Date('2025-09-17');
+                const endRange = new Date('2025-12-31T23:59:59');
+                const checkDate = new Date(date);
+                return checkDate >= startRange && checkDate <= endRange;
+            }
+
+            function formatDateTimeLocal(date) {
+                const d = new Date(date);
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                const hours = String(d.getHours()).padStart(2, '0');
+                const minutes = String(d.getMinutes()).padStart(2, '0');
+                return `${year}-${month}-${day}T${hours}:${minutes}`;
+            }
+
+            function updateStatus(isOnline) {
+                const statusDot = document.getElementById('statusDot');
+                const statusText = document.getElementById('statusText');
+                
+                if (isOnline) {
+                    statusDot.className = 'status-dot status-online';
+                    statusText.textContent = 'En ligne';
+                } else {
+                    statusDot.className = 'status-dot status-offline';
+                    statusText.textContent = 'Hors ligne';
+                }
+            }
+
+            function showToast(message, type = 'info') {
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.textContent = message;
                 container.appendChild(toast);
                 
+                // Animation d'apparition
                 setTimeout(() => {
-                    toast.classList.add(\'show\');
+                    toast.classList.add('show');
                 }, 100);
 
+                // Animation de disparition
                 setTimeout(() => {
-                    toast.classList.remove(\'show\');
-                    setTimeout(() => container.removeChild(toast), 500);
+                    toast.classList.remove('show');
+                    setTimeout(() => {
+                        if (container.contains(toast)) {
+                            container.removeChild(toast);
+                        }
+                    }, 500);
                 }, 3000);
+            }
+
+            // ========================================================================
+            // GESTION DES ERREURS RÉSEAU
+            // ========================================================================
+
+            window.addEventListener('online', () => {
+                if (useFirebase) {
+                    updateStatus(true);
+                    showToast('Connexion rétablie', 'success');
+                }
+            });
+
+            window.addEventListener('offline', () => {
+                updateStatus(false);
+                showToast('Connexion perdue - Mode hors ligne', 'error');
+            });
+
+            // Initialisation du statut
+            if (!useFirebase) {
+                updateStatus(false);
             }
         });
 
         /*
-        Résumé des dépendances externes :
-        - FullCalendar (JS) : https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js
-        - Firebase (JS) : 
-            - https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js
-            - https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js
-            - https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js
+        ========================================================================
+        RÉSUMÉ DES DÉPENDANCES EXTERNES
+        ========================================================================
+        
+        CDN utilisés :
+        - FullCalendar v6.1.11 : https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js
+        - Firebase v9.6.1 :
+          * App : https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js
+          * Auth : https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js
+          * Firestore : https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js
 
-        Exemple de configuration Firebase (firebaseConfig) :
+        Exemple de configuration Firebase (à remplacer dans firebaseConfig) :
         {
-            apiKey: "AIzaSy...",
-            authDomain: "votre-projet.firebaseapp.com",
-            projectId: "votre-projet",
-            storageBucket: "votre-projet.appspot.com",
-            messagingSenderId: "1234567890",
-            appId: "1:1234567890:web:abcdef123456"
+            "apiKey": "AIzaSy...",
+            "authDomain": "votre-projet.firebaseapp.com",
+            "projectId": "votre-projet",
+            "storageBucket": "votre-projet.appspot.com",
+            "messagingSenderId": "1234567890",
+            "appId": "1:1234567890:web:abcdef123456"
+        }
+        
+        Règles Firestore pour les tests :
+        rules_version = '2';
+        service cloud.firestore {
+          match /databases/{database}/documents {
+            match /events/{eventId} {
+              allow read, write: if true;
+            }
+          }
         }
         */
     </script>
 
 </body>
 </html>
-
 
