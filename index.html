@@ -2,609 +2,781 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Calendrier Interactif</title>
     
     <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#3b82f6">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Calendrier">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Mon Calendrier">
+    <meta name="theme-color" content="#3b82f6">
     
-    <!-- FullCalendar CDN -->
-    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
+    <!-- FullCalendar CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
     
     <style>
-        /* ========================================================================
-           STYLES GÉNÉRAUX
-           ======================================================================== */
-        
+        /* Variables CSS pour iPhone */
+        :root {
+            --primary-color: #3b82f6;
+            --primary-dark: #1d4ed8;
+            --secondary-color: #8b5cf6;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --info-color: #06b6d4;
+            --light-color: #f8fafc;
+            --dark-color: #1e293b;
+            
+            /* Safe Area pour iPhone */
+            --safe-area-top: env(safe-area-inset-top, 0px);
+            --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-area-left: env(safe-area-inset-left, 0px);
+            --safe-area-right: env(safe-area-inset-right, 0px);
+            
+            /* Tailles optimisées pour iPhone */
+            --header-height: calc(60px + var(--safe-area-top));
+            --toolbar-height: 60px;
+            --button-height: 44px;
+            --button-min-width: 44px;
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --border-radius: 12px;
+            --border-radius-sm: 8px;
+        }
+
+        /* Reset et base */
         * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #1f2937;
-            margin: 0;
-            padding: 1rem;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             min-height: 100vh;
+            min-height: 100dvh; /* Dynamic viewport height pour iPhone */
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            /* Prévention du zoom sur iPhone */
+            touch-action: manipulation;
+            -webkit-text-size-adjust: 100%;
         }
-        
-        /* ========================================================================
-           CONTENEUR PRINCIPAL
-           ======================================================================== */
-        
+
+        /* Container principal avec Safe Area */
         .app-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 16px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            backdrop-filter: blur(10px);
-            overflow: hidden;
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            padding-top: var(--safe-area-top);
+            padding-bottom: var(--safe-area-bottom);
+            padding-left: var(--safe-area-left);
+            padding-right: var(--safe-area-right);
         }
-        
-        /* ========================================================================
-           EN-TÊTE
-           ======================================================================== */
-        
-        .app-header {
-            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-            color: white;
-            padding: 2rem;
+
+        /* Header optimisé iPhone */
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: var(--spacing-md);
             text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            /* Support pour l'encoche iPhone */
+            padding-top: calc(var(--spacing-md) + var(--safe-area-top));
         }
-        
-        .app-title {
-            font-size: 2.5rem;
+
+        .header h1 {
+            color: white;
+            font-size: 24px;
             font-weight: 700;
-            margin: 0;
+            margin-bottom: var(--spacing-xs);
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-        
-        .app-subtitle {
-            font-size: 1.1rem;
-            opacity: 0.9;
-            margin: 0.5rem 0 0 0;
+
+        .header p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            font-weight: 500;
         }
-        
-        /* ========================================================================
-           BARRE D'OUTILS
-           ======================================================================== */
-        
+
+        /* Toolbar optimisée pour iPhone */
         .toolbar {
             background: white;
-            padding: 1.5rem;
-            border-bottom: 1px solid #e5e7eb;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            align-items: center;
-            justify-content: space-between;
+            padding: var(--spacing-md);
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            margin: 0 var(--spacing-sm);
+            margin-top: var(--spacing-md);
+            position: sticky;
+            top: calc(var(--header-height) - var(--spacing-md));
+            z-index: 90;
         }
-        
-        .toolbar-section {
-            display: flex;
-            gap: 0.75rem;
+
+        /* Grille responsive pour les contrôles */
+        .toolbar-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: var(--spacing-md);
+        }
+
+        /* Ligne de recherche et filtre */
+        .search-filter-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: var(--spacing-sm);
             align-items: center;
         }
-        
-        .toolbar input, .toolbar select, .toolbar button {
-            padding: 0.75rem 1rem;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            font-size: 0.875rem;
+
+        .search-input {
+            flex: 1;
+            height: var(--button-height);
+            padding: 0 var(--spacing-md);
+            border: 2px solid #e2e8f0;
+            border-radius: var(--border-radius-sm);
+            font-size: 16px; /* Prévention du zoom sur iPhone */
+            background: #f8fafc;
             transition: all 0.2s ease;
         }
-        
-        .toolbar input:focus, .toolbar select:focus {
+
+        .search-input:focus {
             outline: none;
-            border-color: #3b82f6;
+            border-color: var(--primary-color);
+            background: white;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
-        
-        .toolbar button {
-            background: #3b82f6;
-            color: white;
-            border: none;
+
+        .color-filter {
+            height: var(--button-height);
+            min-width: var(--button-min-width);
+            padding: 0 var(--spacing-md);
+            border: 2px solid #e2e8f0;
+            border-radius: var(--border-radius-sm);
+            font-size: 14px;
+            background: white;
             cursor: pointer;
-            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .color-filter:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        /* Ligne des boutons d'action */
+        .action-buttons-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--spacing-sm);
+        }
+
+        .action-btn {
+            height: var(--button-height);
+            border: none;
+            border-radius: var(--border-radius-sm);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            justify-content: center;
+            gap: var(--spacing-xs);
+            /* Optimisation tactile iPhone */
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
-        
-        .toolbar button:hover {
-            background: #2563eb;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+
+        .action-btn:active {
+            transform: scale(0.95);
         }
-        
-        .toolbar button:active {
-            transform: translateY(0);
+
+        .export-btn {
+            background: linear-gradient(135deg, var(--success-color), #059669);
+            color: white;
         }
-        
-        .btn-secondary {
-            background: #6b7280 !important;
+
+        .import-btn {
+            background: linear-gradient(135deg, var(--info-color), #0891b2);
+            color: white;
         }
-        
-        .btn-secondary:hover {
-            background: #4b5563 !important;
+
+        .clear-btn {
+            background: linear-gradient(135deg, var(--danger-color), #dc2626);
+            color: white;
         }
-        
-        /* ========================================================================
-           CALENDRIER
-           ======================================================================== */
-        
+
+        /* Container du calendrier */
         .calendar-container {
-            padding: 2rem;
+            flex: 1;
             background: white;
-        }
-        
-        #calendar {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin: 0 var(--spacing-sm) var(--spacing-md);
+            border-radius: 0 0 var(--border-radius) var(--border-radius);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             overflow: hidden;
+            /* Padding pour éviter les zones non sûres */
+            padding-bottom: var(--safe-area-bottom);
         }
-        
-        /* Personnalisation FullCalendar */
+
+        .calendar-wrapper {
+            padding: var(--spacing-md);
+            height: 100%;
+        }
+
+        /* Optimisations FullCalendar pour iPhone */
+        .fc {
+            height: 100% !important;
+        }
+
         .fc-header-toolbar {
-            padding: 1rem !important;
-            background: #f8fafc !important;
-            border-bottom: 1px solid #e2e8f0 !important;
+            margin-bottom: var(--spacing-md) !important;
+            flex-wrap: wrap !important;
+            gap: var(--spacing-sm) !important;
         }
-        
-        .fc-button-primary {
-            background: #3b82f6 !important;
-            border-color: #3b82f6 !important;
-            border-radius: 6px !important;
-            font-weight: 500 !important;
+
+        .fc-toolbar-chunk {
+            display: flex !important;
+            align-items: center !important;
+            gap: var(--spacing-xs) !important;
         }
-        
-        .fc-button-primary:hover {
-            background: #2563eb !important;
-            border-color: #2563eb !important;
+
+        /* Boutons FullCalendar optimisés iPhone */
+        .fc-button {
+            height: var(--button-height) !important;
+            min-width: var(--button-min-width) !important;
+            padding: 0 var(--spacing-md) !important;
+            border-radius: var(--border-radius-sm) !important;
+            font-size: 14px !important;
+            font-weight: 600 !important;
+            border: 2px solid var(--primary-color) !important;
+            background: var(--primary-color) !important;
+            color: white !important;
+            transition: all 0.2s ease !important;
+            /* Optimisation tactile */
+            -webkit-tap-highlight-color: transparent !important;
+            touch-action: manipulation !important;
         }
-        
+
+        .fc-button:hover,
+        .fc-button:focus {
+            background: var(--primary-dark) !important;
+            border-color: var(--primary-dark) !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
+        }
+
+        .fc-button:active {
+            transform: scale(0.95) !important;
+        }
+
+        .fc-button-active {
+            background: var(--primary-dark) !important;
+            border-color: var(--primary-dark) !important;
+        }
+
+        /* Navigation arrows optimisées */
+        .fc-prev-button,
+        .fc-next-button {
+            width: var(--button-height) !important;
+            min-width: var(--button-height) !important;
+            padding: 0 !important;
+        }
+
+        /* Titre du calendrier */
+        .fc-toolbar-title {
+            font-size: 20px !important;
+            font-weight: 700 !important;
+            color: var(--dark-color) !important;
+            margin: 0 var(--spacing-sm) !important;
+        }
+
+        /* Cellules du calendrier optimisées tactile */
+        .fc-daygrid-day {
+            min-height: 60px !important;
+            cursor: pointer !important;
+            transition: background-color 0.2s ease !important;
+        }
+
+        .fc-daygrid-day:hover {
+            background-color: rgba(59, 130, 246, 0.05) !important;
+        }
+
+        .fc-daygrid-day-number {
+            font-size: 16px !important;
+            font-weight: 600 !important;
+            padding: var(--spacing-xs) !important;
+        }
+
+        /* Événements optimisés pour iPhone */
         .fc-event {
-            border-radius: 6px !important;
+            border-radius: var(--border-radius-sm) !important;
             border: none !important;
-            padding: 2px 6px !important;
-            font-weight: 500 !important;
+            padding: var(--spacing-xs) var(--spacing-sm) !important;
+            font-size: 12px !important;
+            font-weight: 600 !important;
             cursor: pointer !important;
             transition: all 0.2s ease !important;
+            /* Zone tactile minimale */
+            min-height: 32px !important;
+            display: flex !important;
+            align-items: center !important;
         }
-        
+
         .fc-event:hover {
             transform: translateY(-1px) !important;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
         }
-        
-        .fc-daygrid-day:hover {
-            background-color: rgba(59, 130, 246, 0.05) !important;
-        }
-        
-        /* ========================================================================
-           MODAL
-           ======================================================================== */
-        
+
+        /* Modal optimisée iPhone */
         .modal {
             display: none;
             position: fixed;
-            z-index: 1000;
-            left: 0;
             top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
-            animation: fadeIn 0.3s ease;
+            height: 100dvh; /* Dynamic viewport height */
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 1000;
+            /* Support Safe Area */
+            padding-top: var(--safe-area-top);
+            padding-bottom: var(--safe-area-bottom);
+            padding-left: var(--safe-area-left);
+            padding-right: var(--safe-area-right);
         }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        
+
         .modal-content {
             background: white;
-            margin: 5% auto;
-            padding: 0;
-            border-radius: 16px;
-            width: 90%;
-            max-width: 500px;
-            max-height: 80vh;
+            margin: var(--spacing-lg);
+            border-radius: var(--border-radius);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            max-height: calc(100vh - 2 * var(--spacing-lg) - var(--safe-area-top) - var(--safe-area-bottom));
+            max-height: calc(100dvh - 2 * var(--spacing-lg));
             overflow: hidden;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            animation: slideIn 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            animation: modalSlideIn 0.3s ease-out;
         }
-        
-        @keyframes slideIn {
-            from { 
+
+        @keyframes modalSlideIn {
+            from {
                 opacity: 0;
-                transform: translateY(-20px) scale(0.95);
+                transform: translateY(50px) scale(0.95);
             }
-            to { 
+            to {
                 opacity: 1;
                 transform: translateY(0) scale(1);
             }
         }
-        
+
         .modal-header {
-            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: white;
-            padding: 1.5rem;
+            padding: var(--spacing-lg);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        
+
         .modal-title {
-            font-size: 1.25rem;
-            font-weight: 600;
+            font-size: 20px;
+            font-weight: 700;
             margin: 0;
         }
-        
-        .close-button {
-            background: none;
+
+        .close-btn {
+            background: rgba(255, 255, 255, 0.2);
             border: none;
             color: white;
-            font-size: 1.5rem;
+            width: var(--button-height);
+            height: var(--button-height);
+            border-radius: 50%;
+            font-size: 18px;
+            font-weight: bold;
             cursor: pointer;
-            padding: 0.25rem;
-            border-radius: 4px;
-            transition: background-color 0.2s;
-        }
-        
-        .close-button:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
-        .modal-body {
-            padding: 2rem;
-            max-height: 60vh;
-            overflow-y: auto;
-        }
-        
-        /* ========================================================================
-           FORMULAIRES
-           ======================================================================== */
-        
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: #374151;
-        }
-        
-        .form-group input, 
-        .form-group textarea, 
-        .form-group select {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            font-size: 0.875rem;
-            transition: all 0.2s ease;
-        }
-        
-        .form-group input:focus, 
-        .form-group textarea:focus, 
-        .form-group select:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-        
-        .form-group textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
-        
-        .form-actions {
-            display: flex;
-            gap: 0.75rem;
-            justify-content: flex-end;
-            margin-top: 2rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid #e5e7eb;
-        }
-        
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.875rem;
-            font-weight: 500;
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            justify-content: center;
+            -webkit-tap-highlight-color: transparent;
         }
-        
+
+        .close-btn:hover,
+        .close-btn:focus {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .close-btn:active {
+            transform: scale(0.95);
+        }
+
+        .modal-body {
+            flex: 1;
+            padding: var(--spacing-lg);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Formulaire optimisé iPhone */
+        .form-group {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: var(--spacing-sm);
+            font-weight: 600;
+            color: var(--dark-color);
+            font-size: 16px;
+        }
+
+        .form-input,
+        .form-textarea,
+        .form-select {
+            width: 100%;
+            padding: var(--spacing-md);
+            border: 2px solid #e2e8f0;
+            border-radius: var(--border-radius-sm);
+            font-size: 16px; /* Prévention du zoom iPhone */
+            background: #f8fafc;
+            transition: all 0.2s ease;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .form-input:focus,
+        .form-textarea:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        /* Boutons du formulaire */
+        .form-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--spacing-md);
+            margin-top: var(--spacing-lg);
+            padding-top: var(--spacing-lg);
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .btn {
+            height: var(--button-height);
+            border: none;
+            border-radius: var(--border-radius-sm);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-xs);
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
         .btn-primary {
-            background: #3b82f6;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
             color: white;
         }
-        
-        .btn-primary:hover {
-            background: #2563eb;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-        }
-        
-        .btn-danger {
-            background: #ef4444;
-            color: white;
-        }
-        
-        .btn-danger:hover {
-            background: #dc2626;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-        }
-        
+
         .btn-secondary {
-            background: #6b7280;
+            background: #f1f5f9;
+            color: var(--dark-color);
+            border: 2px solid #e2e8f0;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger-color), #dc2626);
             color: white;
         }
-        
-        .btn-secondary:hover {
-            background: #4b5563;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+
+        /* Input file caché */
+        .file-input {
+            display: none;
         }
-        
-        /* ========================================================================
-           NOTIFICATIONS TOAST
-           ======================================================================== */
-        
+
+        /* Toast notifications optimisées iPhone */
         .toast {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #1f2937;
-            color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
-            z-index: 1001;
+            top: calc(var(--spacing-lg) + var(--safe-area-top));
+            left: var(--spacing-md);
+            right: var(--spacing-md);
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: var(--spacing-md);
+            z-index: 2000;
+            transform: translateY(-100px);
             opacity: 0;
-            transform: translateX(100%);
             transition: all 0.3s ease;
-            max-width: 400px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            border-left: 4px solid var(--success-color);
         }
-        
+
         .toast.show {
+            transform: translateY(0);
             opacity: 1;
-            transform: translateX(0);
         }
-        
-        .toast.success {
-            background: #10b981;
-        }
-        
+
         .toast.error {
-            background: #ef4444;
+            border-left-color: var(--danger-color);
         }
-        
+
+        .toast.warning {
+            border-left-color: var(--warning-color);
+        }
+
         .toast.info {
-            background: #3b82f6;
+            border-left-color: var(--info-color);
         }
-        
-        /* ========================================================================
-           RESPONSIVE
-           ======================================================================== */
-        
-        @media (max-width: 768px) {
-            body {
-                padding: 0.5rem;
-            }
-            
-            .app-title {
-                font-size: 2rem;
-            }
-            
-            .app-header {
-                padding: 1.5rem;
+
+        /* Responsive pour différents iPhone */
+        @media screen and (max-width: 375px) {
+            /* iPhone SE, iPhone 12/13/14 mini */
+            .header h1 {
+                font-size: 20px;
             }
             
             .toolbar {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 1rem;
+                padding: var(--spacing-sm);
             }
             
-            .toolbar-section {
-                justify-content: center;
+            .fc-toolbar-title {
+                font-size: 18px !important;
+            }
+        }
+
+        @media screen and (max-width: 320px) {
+            /* iPhone 5/SE (1ère génération) */
+            .action-buttons-row {
+                grid-template-columns: 1fr;
             }
             
-            .calendar-container {
-                padding: 1rem;
+            .search-filter-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media screen and (min-width: 428px) {
+            /* iPhone 14 Pro Max, iPhone 15 Pro Max */
+            .toolbar-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons-row {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        /* Optimisations pour le mode paysage */
+        @media screen and (orientation: landscape) and (max-height: 500px) {
+            .header {
+                padding: var(--spacing-sm) var(--spacing-md);
+            }
+            
+            .header h1 {
+                font-size: 18px;
+                margin-bottom: 0;
+            }
+            
+            .header p {
+                display: none;
             }
             
             .modal-content {
-                margin: 2% auto;
-                width: 95%;
-            }
-            
-            .modal-body {
-                padding: 1.5rem;
-            }
-            
-            .form-actions {
-                flex-direction: column;
-            }
-            
-            .toast {
-                bottom: 10px;
-                right: 10px;
-                left: 10px;
-                max-width: none;
+                margin: var(--spacing-sm);
+                max-height: calc(100vh - 2 * var(--spacing-sm));
             }
         }
-        
-        /* ========================================================================
-           ACCESSIBILITÉ
-           ======================================================================== */
-        
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border: 0;
+
+        /* Prévention du zoom et optimisations tactiles */
+        input[type="text"],
+        input[type="datetime-local"],
+        textarea,
+        select {
+            font-size: 16px !important; /* Prévention du zoom automatique sur iPhone */
         }
-        
-        button:focus-visible, 
-        input:focus-visible, 
-        select:focus-visible, 
-        textarea:focus-visible {
-            outline: 2px solid #3b82f6;
+
+        /* Amélioration de la lisibilité */
+        .fc-daygrid-day-number {
+            color: var(--dark-color) !important;
+        }
+
+        .fc-col-header-cell {
+            background: #f8fafc !important;
+            border-color: #e2e8f0 !important;
+        }
+
+        .fc-col-header-cell-cushion {
+            color: var(--dark-color) !important;
+            font-weight: 600 !important;
+            font-size: 14px !important;
+        }
+
+        /* États de focus améliorés pour l'accessibilité */
+        .fc-button:focus-visible {
+            outline: 3px solid rgba(59, 130, 246, 0.5) !important;
+            outline-offset: 2px !important;
+        }
+
+        .btn:focus-visible,
+        .action-btn:focus-visible {
+            outline: 3px solid rgba(59, 130, 246, 0.5);
             outline-offset: 2px;
         }
-        
-        /* ========================================================================
-           ANIMATIONS ET MICRO-INTERACTIONS
-           ======================================================================== */
-        
-        .fade-in {
-            animation: fadeIn 0.5s ease;
-        }
-        
-        .bounce-in {
-            animation: bounceIn 0.6s ease;
-        }
-        
-        @keyframes bounceIn {
-            0% {
-                opacity: 0;
-                transform: scale(0.3);
-            }
-            50% {
-                opacity: 1;
-                transform: scale(1.05);
-            }
-            70% {
-                transform: scale(0.9);
-            }
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-        
-        /* Indicateur de chargement */
+
+        /* Animation de chargement */
         .loading {
             display: inline-block;
             width: 20px;
             height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
-            border-top-color: #fff;
+            border-top-color: white;
             animation: spin 1s ease-in-out infinite;
         }
-        
+
         @keyframes spin {
             to { transform: rotate(360deg); }
+        }
+
+        /* Masquage des éléments non essentiels sur très petits écrans */
+        @media screen and (max-width: 320px) {
+            .header p {
+                font-size: 12px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="app-container">
-        <!-- En-tête -->
-        <header class="app-header">
-            <h1 class="app-title">📅 Calendrier Interactif</h1>
-            <p class="app-subtitle">Gérez vos événements du 17 septembre au 31 décembre 2025</p>
+        <!-- Header avec Safe Area -->
+        <header class="header">
+            <h1>📅 Calendrier Interactif</h1>
+            <p>Gérez vos événements du 17 septembre au 31 décembre 2025</p>
         </header>
 
-        <!-- Barre d'outils -->
-        <div class="toolbar" role="toolbar" aria-label="Outils du calendrier">
-            <div class="toolbar-section">
-                <input type="text" id="searchInput" placeholder="🔍 Rechercher des événements..." 
-                       aria-label="Rechercher des événements">
-                
-                <select id="colorFilter" aria-label="Filtrer par couleur">
-                    <option value="">🎨 Toutes les couleurs</option>
-                    <option value="#3788d8">🔵 Bleu</option>
-                    <option value="#28a745">🟢 Vert</option>
-                    <option value="#dc3545">🔴 Rouge</option>
-                    <option value="#ffc107">🟡 Jaune</option>
-                    <option value="#6f42c1">🟣 Violet</option>
-                    <option value="#fd7e14">🟠 Orange</option>
-                </select>
-            </div>
-            
-            <div class="toolbar-section">
-                <button id="exportBtn" class="btn-secondary" aria-label="Exporter les événements">
-                    📥 Exporter
-                </button>
-                
-                <button id="importBtn" class="btn-secondary" aria-label="Importer des événements">
-                    📤 Importer
-                </button>
-                <input type="file" id="importFile" accept=".json" style="display: none;" aria-label="Fichier à importer">
-                
-                <button id="clearAllBtn" class="btn-secondary" aria-label="Effacer tous les événements">
-                    🗑️ Tout effacer
-                </button>
+        <!-- Toolbar optimisée iPhone -->
+        <div class="toolbar">
+            <div class="toolbar-grid">
+                <!-- Ligne de recherche et filtre -->
+                <div class="search-filter-row">
+                    <input type="text" 
+                           id="searchInput" 
+                           class="search-input" 
+                           placeholder="🔍 Rechercher des événements..."
+                           autocomplete="off"
+                           autocorrect="off"
+                           autocapitalize="off"
+                           spellcheck="false">
+                    <select id="colorFilter" class="color-filter">
+                        <option value="">🎨 Toutes</option>
+                        <option value="#3788d8">🔵 Bleu</option>
+                        <option value="#28a745">🟢 Vert</option>
+                        <option value="#dc3545">🔴 Rouge</option>
+                        <option value="#ffc107">🟡 Jaune</option>
+                        <option value="#6f42c1">🟣 Violet</option>
+                        <option value="#fd7e14">🟠 Orange</option>
+                    </select>
+                </div>
+
+                <!-- Ligne des boutons d'action -->
+                <div class="action-buttons-row">
+                    <button id="exportBtn" class="action-btn export-btn">
+                        📥 Export
+                    </button>
+                    <button id="importBtn" class="action-btn import-btn">
+                        📤 Import
+                    </button>
+                    <button id="clearBtn" class="action-btn clear-btn">
+                        🗑️ Effacer
+                    </button>
+                </div>
             </div>
         </div>
 
-        <!-- Calendrier -->
+        <!-- Container du calendrier -->
         <div class="calendar-container">
-            <div id='calendar' role="application" aria-label="Calendrier des événements"></div>
+            <div class="calendar-wrapper">
+                <div id="calendar"></div>
+            </div>
         </div>
     </div>
 
-    <!-- Modal pour l'édition d'événements -->
-    <div id="eventModal" class="modal" role="dialog" aria-labelledby="modalTitle" aria-modal="true">
+    <!-- Modal d'événement optimisée iPhone -->
+    <div id="eventModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="modalTitle" class="modal-title">Ajouter un événement</h3>
-                <button class="close-button" aria-label="Fermer la modal">&times;</button>
+                <h2 id="modalTitle" class="modal-title">Ajouter un événement</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
             </div>
-            
             <div class="modal-body">
                 <form id="eventForm">
-                    <input type="hidden" id="eventId">
-                    
                     <div class="form-group">
-                        <label for="eventTitle">📝 Titre *</label>
-                        <input type="text" id="eventTitle" required aria-required="true" 
-                               placeholder="Nom de l'événement">
+                        <label for="eventTitle" class="form-label">📝 Titre *</label>
+                        <input type="text" 
+                               id="eventTitle" 
+                               class="form-input" 
+                               placeholder="Nom de l'événement" 
+                               required
+                               autocomplete="off"
+                               autocorrect="off"
+                               autocapitalize="words">
                     </div>
-                    
+
                     <div class="form-group">
-                        <label for="eventDesc">📄 Description</label>
-                        <textarea id="eventDesc" placeholder="Description de l'événement..."></textarea>
+                        <label for="eventDescription" class="form-label">📄 Description</label>
+                        <textarea id="eventDescription" 
+                                  class="form-textarea" 
+                                  placeholder="Description de l'événement..."
+                                  autocomplete="off"
+                                  autocorrect="on"
+                                  autocapitalize="sentences"></textarea>
                     </div>
-                    
+
                     <div class="form-group">
-                        <label for="eventStart">🕐 Date et heure de début *</label>
-                        <input type="datetime-local" id="eventStart" required aria-required="true">
+                        <label for="eventStart" class="form-label">🕐 Date et heure de début *</label>
+                        <input type="datetime-local" 
+                               id="eventStart" 
+                               class="form-input" 
+                               required>
                     </div>
-                    
+
                     <div class="form-group">
-                        <label for="eventEnd">🕑 Date et heure de fin *</label>
-                        <input type="datetime-local" id="eventEnd" required aria-required="true">
+                        <label for="eventEnd" class="form-label">🕑 Date et heure de fin *</label>
+                        <input type="datetime-local" 
+                               id="eventEnd" 
+                               class="form-input" 
+                               required>
                     </div>
-                    
+
                     <div class="form-group">
-                        <label for="eventColor">🎨 Couleur</label>
-                        <select id="eventColor">
+                        <label for="eventColor" class="form-label">🎨 Couleur</label>
+                        <select id="eventColor" class="form-select">
                             <option value="#3788d8">🔵 Bleu</option>
                             <option value="#28a745">🟢 Vert</option>
                             <option value="#dc3545">🔴 Rouge</option>
@@ -613,22 +785,31 @@
                             <option value="#fd7e14">🟠 Orange</option>
                         </select>
                     </div>
-                    
+
                     <div class="form-group">
-                        <label for="eventParticipants">👥 Participants</label>
-                        <input type="text" id="eventParticipants" 
-                               placeholder="Jean, Marie, Pierre... (séparés par des virgules)">
+                        <label for="eventParticipants" class="form-label">👥 Participants</label>
+                        <input type="text" 
+                               id="eventParticipants" 
+                               class="form-input" 
+                               placeholder="Noms séparés par des virgules"
+                               autocomplete="off"
+                               autocorrect="off"
+                               autocapitalize="words">
                     </div>
-                    
+
                     <div class="form-actions">
-                        <button type="button" id="cancelButton" class="btn btn-secondary">
-                            ❌ Annuler
-                        </button>
-                        <button type="button" id="deleteEventButton" class="btn btn-danger" style="display: none;">
-                            🗑️ Supprimer
+                        <button type="button" class="btn btn-secondary" onclick="closeModal()">
+                            Annuler
                         </button>
                         <button type="submit" class="btn btn-primary">
                             💾 Sauvegarder
+                        </button>
+                    </div>
+
+                    <!-- Bouton de suppression (caché par défaut) -->
+                    <div id="deleteSection" style="display: none; margin-top: var(--spacing-md);">
+                        <button type="button" id="deleteBtn" class="btn btn-danger" style="width: 100%;">
+                            🗑️ Supprimer l'événement
                         </button>
                     </div>
                 </form>
@@ -636,337 +817,403 @@
         </div>
     </div>
 
-    <!-- Conteneur pour les notifications -->
-    <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+    <!-- Input file caché pour l'import -->
+    <input type="file" id="fileInput" class="file-input" accept=".json">
+
+    <!-- Toast container -->
+    <div id="toastContainer"></div>
+
+    <!-- FullCalendar JS -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 
     <script>
+        // Variables globales
+        let calendar;
+        let currentEvent = null;
+        let events = [];
+
+        // Configuration des couleurs
+        const eventColors = {
+            '#3788d8': '🔵 Bleu',
+            '#28a745': '🟢 Vert', 
+            '#dc3545': '🔴 Rouge',
+            '#ffc107': '🟡 Jaune',
+            '#6f42c1': '🟣 Violet',
+            '#fd7e14': '🟠 Orange'
+        };
+
+        // Initialisation de l'application
         document.addEventListener('DOMContentLoaded', function() {
-            // ========================================================================
-            // VARIABLES GLOBALES
-            // ========================================================================
+            initializeCalendar();
+            loadEvents();
+            setupEventListeners();
+            showWelcomeToast();
+        });
 
-            let calendar;
-            let allEvents = [];
-            const STORAGE_KEY = 'calendarEvents';
-
-            // ========================================================================
-            // INITIALISATION DE FULLCALENDAR
-            // ========================================================================
-
+        // Initialisation du calendrier FullCalendar
+        function initializeCalendar() {
             const calendarEl = document.getElementById('calendar');
+            
             calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
-                initialDate: '2025-09-17',
                 locale: 'fr',
+                firstDay: 1,
+                height: 'auto',
                 headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',
                     right: 'dayGridMonth,timeGridWeek,timeGridDay'
                 },
-                editable: true,
-                selectable: true,
-                selectMirror: true,
-                dayMaxEvents: true,
-                weekends: true,
-                events: [],
-                
-                // Plage de dates valide (17 septembre 2025 au 31 décembre 2025)
+                buttonText: {
+                    today: 'Aujourd\'hui',
+                    month: 'Mois',
+                    week: 'Semaine',
+                    day: 'Jour'
+                },
                 validRange: {
                     start: '2025-09-17',
-                    end: '2026-01-01' // Fin exclusive
+                    end: '2026-01-01'
                 },
-
-                // Gestion des événements
-                select: function(info) {
-                    if (isDateInValidRange(info.start)) {
-                        openModal(info);
-                    } else {
-                        showToast("Vous ne pouvez créer des événements qu'entre le 17 septembre et le 31 décembre 2025.", 'error');
-                    }
+                selectable: true,
+                selectMirror: true,
+                editable: true,
+                dayMaxEvents: true,
+                weekends: true,
+                events: events,
+                
+                // Événements de sélection et interaction
+                select: function(selectInfo) {
+                    openModal(selectInfo);
                 },
-
-                eventClick: function(info) {
-                    openModal(info.event);
+                
+                eventClick: function(clickInfo) {
+                    editEvent(clickInfo.event);
                 },
-
-                // Drag & Drop avec validation
-                eventDrop: function(info) {
-                    if (isDateInValidRange(info.event.start)) {
-                        updateEvent(info.event);
-                        showToast(`Événement "${info.event.title}" déplacé`, 'success');
-                    } else {
-                        info.revert();
-                        showToast("Impossible de déplacer l'événement en dehors de la période autorisée.", 'error');
-                    }
+                
+                eventDrop: function(dropInfo) {
+                    updateEventInStorage(dropInfo.event);
+                    showToast('Événement déplacé avec succès', 'success');
                 },
-
-                // Redimensionnement avec validation
-                eventResize: function(info) {
-                    if (isDateInValidRange(info.event.start) && isDateInValidRange(info.event.end)) {
-                        updateEvent(info.event);
-                        showToast(`Durée de "${info.event.title}" modifiée`, 'success');
-                    } else {
-                        info.revert();
-                        showToast("Impossible de redimensionner l'événement en dehors de la période autorisée.", 'error');
-                    }
-                }
-            });
-
-            calendar.render();
-
-            // ========================================================================
-            // GESTION DE LA PERSISTANCE (LOCALSTORAGE)
-            // ========================================================================
-
-            function loadFromLocalStorage() {
-                try {
-                    const localEvents = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-                    allEvents = localEvents;
-                    applyFilters();
-                    showToast(`${allEvents.length} événements chargés`, 'info');
-                } catch (error) {
-                    console.error('Erreur de chargement:', error);
-                    allEvents = [];
-                    showToast('Erreur de chargement des données', 'error');
-                }
-            }
-
-            function saveToLocalStorage() {
-                try {
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(allEvents));
-                } catch (error) {
-                    console.error('Erreur de sauvegarde:', error);
-                    showToast('Erreur de sauvegarde des données', 'error');
-                }
-            }
-
-            function saveEvent(eventData) {
-                // Validation des données
-                if (!eventData.title || !eventData.start || !eventData.end) {
-                    showToast("Veuillez remplir tous les champs obligatoires.", 'error');
-                    return;
-                }
-
+                
+                eventResize: function(resizeInfo) {
+                    updateEventInStorage(resizeInfo.event);
+                    showToast('Durée de l\'événement modifiée', 'success');
+                },
+                
                 // Validation des dates
-                const startDate = new Date(eventData.start);
-                const endDate = new Date(eventData.end);
+                selectConstraint: {
+                    start: '2025-09-17',
+                    end: '2026-01-01'
+                },
                 
-                if (endDate <= startDate) {
-                    showToast("La date de fin doit être postérieure à la date de début.", 'error');
-                    return;
+                eventConstraint: {
+                    start: '2025-09-17',
+                    end: '2026-01-01'
                 }
-
-                if (!isDateInValidRange(startDate) || !isDateInValidRange(endDate)) {
-                    showToast("Les événements doivent être entre le 17 septembre et le 31 décembre 2025.", 'error');
-                    return;
-                }
-
-                // Ajout de métadonnées
-                eventData.lastModified = new Date().toISOString();
-                eventData.createdAt = eventData.createdAt || new Date().toISOString();
-
-                if (eventData.id) {
-                    // Mise à jour
-                    const index = allEvents.findIndex(e => e.id === eventData.id);
-                    if (index !== -1) {
-                        allEvents[index] = eventData;
-                        showToast(`"${eventData.title}" mis à jour`, 'success');
-                    }
-                } else {
-                    // Création
-                    eventData.id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
-                    allEvents.push(eventData);
-                    showToast(`"${eventData.title}" ajouté`, 'success');
-                }
-
-                saveToLocalStorage();
-                applyFilters();
-            }
-
-            function updateEvent(event) {
-                const eventData = {
-                    id: event.id,
-                    title: event.title,
-                    start: event.start.toISOString(),
-                    end: event.end ? event.end.toISOString() : null,
-                    color: event.backgroundColor || event.color,
-                    description: event.extendedProps.description || '',
-                    participants: event.extendedProps.participants || []
-                };
-                
-                const index = allEvents.findIndex(e => e.id === eventData.id);
-                if (index !== -1) {
-                    allEvents[index] = { ...allEvents[index], ...eventData };
-                    saveToLocalStorage();
-                }
-            }
-
-            function deleteEvent(eventId) {
-                const index = allEvents.findIndex(e => e.id === eventId);
-                if (index !== -1) {
-                    const eventTitle = allEvents[index].title;
-                    allEvents.splice(index, 1);
-                    saveToLocalStorage();
-                    applyFilters();
-                    showToast(`"${eventTitle}" supprimé`, 'success');
-                }
-            }
-
-            function clearAllEvents() {
-                if (confirm('Êtes-vous sûr de vouloir supprimer tous les événements ? Cette action est irréversible.')) {
-                    allEvents = [];
-                    saveToLocalStorage();
-                    applyFilters();
-                    showToast('Tous les événements ont été supprimés', 'info');
-                }
-            }
-
-            // ========================================================================
-            // GESTION DE LA MODAL
-            // ========================================================================
-
-            const modal = document.getElementById('eventModal');
-            const closeButton = document.querySelector('#eventModal .close-button');
-            const eventForm = document.getElementById('eventForm');
-            const deleteButton = document.getElementById('deleteEventButton');
-            const cancelButton = document.getElementById('cancelButton');
-
-            function openModal(data) {
-                if (data.id) {
-                    // Modification d'un événement existant
-                    document.getElementById('modalTitle').innerText = 'Modifier l\'événement';
-                    document.getElementById('eventId').value = data.id;
-                    document.getElementById('eventTitle').value = data.title;
-                    document.getElementById('eventDesc').value = data.extendedProps.description || '';
-                    document.getElementById('eventStart').value = formatDateTimeLocal(data.start);
-                    document.getElementById('eventEnd').value = data.end ? formatDateTimeLocal(data.end) : '';
-                    document.getElementById('eventColor').value = data.backgroundColor || data.color || '#3788d8';
-                    document.getElementById('eventParticipants').value = (data.extendedProps.participants || []).join(', ');
-                    deleteButton.style.display = 'inline-flex';
-                } else {
-                    // Création d'un nouvel événement
-                    document.getElementById('modalTitle').innerText = 'Ajouter un événement';
-                    document.getElementById('eventId').value = '';
-                    eventForm.reset();
-                    
-                    // Définir les dates par défaut
-                    const startDate = new Date(data.startStr + 'T12:00');
-                    const endDate = new Date(data.endStr ? data.endStr + 'T13:00' : data.startStr + 'T13:00');
-                    
-                    document.getElementById('eventStart').value = formatDateTimeLocal(startDate);
-                    document.getElementById('eventEnd').value = formatDateTimeLocal(endDate);
-                    document.getElementById('eventColor').value = '#3788d8';
-                    deleteButton.style.display = 'none';
-                }
-                
-                modal.style.display = 'block';
-                document.getElementById('eventTitle').focus();
-            }
-
-            function closeModal() {
-                modal.style.display = 'none';
-            }
-
-            // Gestionnaires d'événements pour la modal
-            closeButton.onclick = closeModal;
-            cancelButton.onclick = closeModal;
+            });
             
-            window.onclick = (event) => {
-                if (event.target === modal) {
-                    closeModal();
-                }
-            };
+            calendar.render();
+        }
 
-            // Gestion de l'échappement pour fermer la modal
-            document.addEventListener('keydown', (event) => {
-                if (event.key === 'Escape' && modal.style.display === 'block') {
+        // Configuration des écouteurs d'événements
+        function setupEventListeners() {
+            // Recherche en temps réel
+            document.getElementById('searchInput').addEventListener('input', filterEvents);
+            
+            // Filtre par couleur
+            document.getElementById('colorFilter').addEventListener('change', filterEvents);
+            
+            // Boutons d'action
+            document.getElementById('exportBtn').addEventListener('click', exportEvents);
+            document.getElementById('importBtn').addEventListener('click', () => {
+                document.getElementById('fileInput').click();
+            });
+            document.getElementById('clearBtn').addEventListener('click', clearAllEvents);
+            
+            // Import de fichier
+            document.getElementById('fileInput').addEventListener('change', importEvents);
+            
+            // Formulaire d'événement
+            document.getElementById('eventForm').addEventListener('submit', saveEvent);
+            document.getElementById('deleteBtn').addEventListener('click', deleteEvent);
+            
+            // Fermeture de modal par clic extérieur
+            document.getElementById('eventModal').addEventListener('click', function(e) {
+                if (e.target === this) {
                     closeModal();
                 }
             });
-
-            eventForm.onsubmit = (e) => {
-                e.preventDefault();
-                
-                const eventData = {
-                    id: document.getElementById('eventId').value,
-                    title: document.getElementById('eventTitle').value.trim(),
-                    start: document.getElementById('eventStart').value,
-                    end: document.getElementById('eventEnd').value,
-                    color: document.getElementById('eventColor').value,
-                    description: document.getElementById('eventDesc').value.trim(),
-                    participants: document.getElementById('eventParticipants').value
-                        .split(',')
-                        .map(p => p.trim())
-                        .filter(p => p.length > 0)
-                };
-                
-                saveEvent(eventData);
-                closeModal();
-            };
-
-            deleteButton.onclick = () => {
-                const eventId = document.getElementById('eventId').value;
-                const eventTitle = document.getElementById('eventTitle').value;
-                
-                if (confirm(`Êtes-vous sûr de vouloir supprimer l'événement "${eventTitle}" ?`)) {
-                    deleteEvent(eventId);
+            
+            // Gestion des touches clavier
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
                     closeModal();
                 }
-            };
-
-            // ========================================================================
-            // FILTRAGE ET RECHERCHE
-            // ========================================================================
-
-            const searchInput = document.getElementById('searchInput');
-            const colorFilter = document.getElementById('colorFilter');
-
-            searchInput.addEventListener('input', applyFilters);
-            colorFilter.addEventListener('change', applyFilters);
-
-            function applyFilters() {
-                const searchTerm = searchInput.value.toLowerCase();
-                const selectedColor = colorFilter.value;
-
-                let filteredEvents = allEvents.filter(event => {
-                    // Filtre par texte
-                    const matchesSearch = !searchTerm || 
-                        event.title.toLowerCase().includes(searchTerm) ||
-                        (event.description && event.description.toLowerCase().includes(searchTerm)) ||
-                        (event.participants && event.participants.some(p => p.toLowerCase().includes(searchTerm)));
-
-                    // Filtre par couleur
-                    const matchesColor = !selectedColor || event.color === selectedColor;
-
-                    return matchesSearch && matchesColor;
-                });
-
-                // Mettre à jour le calendrier
-                calendar.removeAllEvents();
-                calendar.addEventSource(filteredEvents);
-            }
-
-            // ========================================================================
-            // EXPORT / IMPORT JSON
-            // ========================================================================
-
-            const exportBtn = document.getElementById('exportBtn');
-            const importBtn = document.getElementById('importBtn');
-            const importFile = document.getElementById('importFile');
-            const clearAllBtn = document.getElementById('clearAllBtn');
-
-            exportBtn.addEventListener('click', exportEvents);
-            importBtn.addEventListener('click', () => importFile.click());
-            importFile.addEventListener('change', importEvents);
-            clearAllBtn.addEventListener('click', clearAllEvents);
-
-            function exportEvents() {
-                if (allEvents.length === 0) {
-                    showToast('Aucun événement à exporter', 'info');
-                    return;
+            });
+            
+            // Prévention du zoom sur double-tap (iPhone)
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', function(event) {
+                const now = (new Date()).getTime();
+                if (now - lastTouchEnd <= 300) {
+                    event.preventDefault();
                 }
+                lastTouchEnd = now;
+            }, false);
+        }
 
-                const dataStr = JSON.stringify(allEvents, null, 2);
+        // Ouverture de la modal
+        function openModal(selectInfo = null) {
+            currentEvent = null;
+            
+            // Réinitialisation du formulaire
+            document.getElementById('eventForm').reset();
+            document.getElementById('modalTitle').textContent = 'Ajouter un événement';
+            document.getElementById('deleteSection').style.display = 'none';
+            
+            // Pré-remplissage des dates si sélection
+            if (selectInfo) {
+                const startDate = new Date(selectInfo.start);
+                const endDate = new Date(selectInfo.end || selectInfo.start);
+                
+                // Ajustement pour les événements d'une journée
+                if (selectInfo.allDay) {
+                    startDate.setHours(9, 0);
+                    endDate.setHours(10, 0);
+                }
+                
+                document.getElementById('eventStart').value = formatDateTimeLocal(startDate);
+                document.getElementById('eventEnd').value = formatDateTimeLocal(endDate);
+            }
+            
+            // Affichage de la modal
+            document.getElementById('eventModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            
+            // Focus sur le premier champ
+            setTimeout(() => {
+                document.getElementById('eventTitle').focus();
+            }, 300);
+        }
+
+        // Édition d'un événement existant
+        function editEvent(event) {
+            currentEvent = event;
+            
+            // Remplissage du formulaire
+            document.getElementById('eventTitle').value = event.title || '';
+            document.getElementById('eventDescription').value = event.extendedProps.description || '';
+            document.getElementById('eventStart').value = formatDateTimeLocal(event.start);
+            document.getElementById('eventEnd').value = formatDateTimeLocal(event.end || event.start);
+            document.getElementById('eventColor').value = event.backgroundColor || '#3788d8';
+            document.getElementById('eventParticipants').value = (event.extendedProps.participants || []).join(', ');
+            
+            // Configuration de la modal pour l'édition
+            document.getElementById('modalTitle').textContent = 'Modifier l\'événement';
+            document.getElementById('deleteSection').style.display = 'block';
+            
+            // Affichage de la modal
+            document.getElementById('eventModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Fermeture de la modal
+        function closeModal() {
+            document.getElementById('eventModal').style.display = 'none';
+            document.body.style.overflow = '';
+            currentEvent = null;
+            
+            // Désélection dans le calendrier
+            calendar.unselect();
+        }
+
+        // Sauvegarde d'un événement
+        function saveEvent(e) {
+            e.preventDefault();
+            
+            // Récupération des données du formulaire
+            const title = document.getElementById('eventTitle').value.trim();
+            const description = document.getElementById('eventDescription').value.trim();
+            const start = new Date(document.getElementById('eventStart').value);
+            const end = new Date(document.getElementById('eventEnd').value);
+            const color = document.getElementById('eventColor').value;
+            const participantsText = document.getElementById('eventParticipants').value.trim();
+            const participants = participantsText ? participantsText.split(',').map(p => p.trim()).filter(p => p) : [];
+            
+            // Validation
+            if (!title) {
+                showToast('Le titre est obligatoire', 'error');
+                return;
+            }
+            
+            if (start >= end) {
+                showToast('La date de fin doit être postérieure à la date de début', 'error');
+                return;
+            }
+            
+            // Validation de la période
+            const minDate = new Date('2025-09-17');
+            const maxDate = new Date('2025-12-31T23:59:59');
+            
+            if (start < minDate || end > maxDate) {
+                showToast('L\'événement doit être entre le 17 septembre et le 31 décembre 2025', 'error');
+                return;
+            }
+            
+            // Création ou mise à jour de l'événement
+            const eventData = {
+                title: title,
+                start: start.toISOString(),
+                end: end.toISOString(),
+                backgroundColor: color,
+                borderColor: color,
+                description: description,
+                participants: participants,
+                createdAt: currentEvent ? currentEvent.extendedProps.createdAt : new Date().toISOString(),
+                lastModified: new Date().toISOString()
+            };
+            
+            if (currentEvent) {
+                // Mise à jour d'un événement existant
+                currentEvent.setProp('title', title);
+                currentEvent.setStart(start);
+                currentEvent.setEnd(end);
+                currentEvent.setProp('backgroundColor', color);
+                currentEvent.setProp('borderColor', color);
+                currentEvent.setExtendedProp('description', description);
+                currentEvent.setExtendedProp('participants', participants);
+                currentEvent.setExtendedProp('lastModified', eventData.lastModified);
+                
+                updateEventInStorage(currentEvent);
+                showToast('Événement modifié avec succès', 'success');
+            } else {
+                // Création d'un nouvel événement
+                eventData.id = generateEventId();
+                eventData.createdAt = eventData.lastModified;
+                
+                calendar.addEvent(eventData);
+                addEventToStorage(eventData);
+                showToast('Événement créé avec succès', 'success');
+            }
+            
+            closeModal();
+        }
+
+        // Suppression d'un événement
+        function deleteEvent() {
+            if (!currentEvent) return;
+            
+            if (confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')) {
+                removeEventFromStorage(currentEvent.id);
+                currentEvent.remove();
+                showToast('Événement supprimé', 'info');
+                closeModal();
+            }
+        }
+
+        // Génération d'un ID unique pour les événements
+        function generateEventId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        // Formatage de date pour input datetime-local
+        function formatDateTimeLocal(date) {
+            if (!date) return '';
+            const d = new Date(date);
+            d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+            return d.toISOString().slice(0, 16);
+        }
+
+        // Gestion du localStorage
+        function loadEvents() {
+            try {
+                const stored = localStorage.getItem('calendarEvents');
+                if (stored) {
+                    events = JSON.parse(stored);
+                    if (calendar) {
+                        calendar.removeAllEvents();
+                        calendar.addEventSource(events);
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur lors du chargement des événements:', error);
+                showToast('Erreur lors du chargement des données', 'error');
+            }
+        }
+
+        function saveEventsToStorage() {
+            try {
+                localStorage.setItem('calendarEvents', JSON.stringify(events));
+            } catch (error) {
+                console.error('Erreur lors de la sauvegarde:', error);
+                showToast('Erreur lors de la sauvegarde', 'error');
+            }
+        }
+
+        function addEventToStorage(eventData) {
+            events.push(eventData);
+            saveEventsToStorage();
+        }
+
+        function updateEventInStorage(calendarEvent) {
+            const index = events.findIndex(e => e.id === calendarEvent.id);
+            if (index !== -1) {
+                events[index] = {
+                    id: calendarEvent.id,
+                    title: calendarEvent.title,
+                    start: calendarEvent.start.toISOString(),
+                    end: calendarEvent.end ? calendarEvent.end.toISOString() : calendarEvent.start.toISOString(),
+                    backgroundColor: calendarEvent.backgroundColor,
+                    borderColor: calendarEvent.borderColor,
+                    description: calendarEvent.extendedProps.description || '',
+                    participants: calendarEvent.extendedProps.participants || [],
+                    createdAt: calendarEvent.extendedProps.createdAt || new Date().toISOString(),
+                    lastModified: new Date().toISOString()
+                };
+                saveEventsToStorage();
+            }
+        }
+
+        function removeEventFromStorage(eventId) {
+            events = events.filter(e => e.id !== eventId);
+            saveEventsToStorage();
+        }
+
+        // Filtrage des événements
+        function filterEvents() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const colorFilter = document.getElementById('colorFilter').value;
+            
+            const allEvents = calendar.getEvents();
+            
+            allEvents.forEach(event => {
+                let shouldShow = true;
+                
+                // Filtre par texte
+                if (searchTerm) {
+                    const title = event.title.toLowerCase();
+                    const description = (event.extendedProps.description || '').toLowerCase();
+                    const participants = (event.extendedProps.participants || []).join(' ').toLowerCase();
+                    
+                    shouldShow = title.includes(searchTerm) || 
+                                description.includes(searchTerm) || 
+                                participants.includes(searchTerm);
+                }
+                
+                // Filtre par couleur
+                if (shouldShow && colorFilter) {
+                    shouldShow = event.backgroundColor === colorFilter;
+                }
+                
+                // Affichage/masquage de l'événement
+                event.setProp('display', shouldShow ? 'auto' : 'none');
+            });
+        }
+
+        // Export des événements
+        function exportEvents() {
+            try {
+                const dataStr = JSON.stringify(events, null, 2);
                 const dataBlob = new Blob([dataStr], { type: 'application/json' });
                 
                 const link = document.createElement('a');
@@ -974,108 +1221,127 @@
                 link.download = `calendrier-events-${new Date().toISOString().split('T')[0]}.json`;
                 link.click();
                 
-                showToast(`${allEvents.length} événements exportés`, 'success');
+                showToast('Événements exportés avec succès', 'success');
+            } catch (error) {
+                console.error('Erreur lors de l\'export:', error);
+                showToast('Erreur lors de l\'export', 'error');
             }
+        }
 
-            function importEvents(event) {
-                const file = event.target.files[0];
-                if (!file) return;
-
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        const importedEvents = JSON.parse(e.target.result);
-                        
-                        if (!Array.isArray(importedEvents)) {
-                            throw new Error("Le fichier doit contenir un tableau d'événements");
-                        }
-
-                        // Validation et import des événements
-                        let importedCount = 0;
-                        importedEvents.forEach(eventData => {
-                            if (eventData.title && eventData.start && eventData.end) {
-                                // Générer un nouvel ID pour éviter les conflits
-                                eventData.id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
-                                eventData.lastModified = new Date().toISOString();
-                                eventData.createdAt = eventData.createdAt || new Date().toISOString();
-                                
-                                allEvents.push(eventData);
-                                importedCount++;
-                            }
-                        });
-
-                        saveToLocalStorage();
-                        applyFilters();
-                        showToast(`${importedCount} événements importés avec succès`, 'success');
-                    } catch (error) {
-                        console.error("Erreur d'import: ", error);
-                        showToast("Erreur lors de l'import du fichier", 'error');
+        // Import des événements
+        function importEvents(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const importedEvents = JSON.parse(event.target.result);
+                    
+                    if (!Array.isArray(importedEvents)) {
+                        throw new Error('Format de fichier invalide');
                     }
-                };
-                reader.readAsText(file);
-                
-                // Reset du champ file
-                event.target.value = '';
-            }
-
-            // ========================================================================
-            // FONCTIONS UTILITAIRES
-            // ========================================================================
-
-            function isDateInValidRange(date) {
-                const startRange = new Date('2025-09-17');
-                const endRange = new Date('2025-12-31T23:59:59');
-                const checkDate = new Date(date);
-                return checkDate >= startRange && checkDate <= endRange;
-            }
-
-            function formatDateTimeLocal(date) {
-                const d = new Date(date);
-                const year = d.getFullYear();
-                const month = String(d.getMonth() + 1).padStart(2, '0');
-                const day = String(d.getDate()).padStart(2, '0');
-                const hours = String(d.getHours()).padStart(2, '0');
-                const minutes = String(d.getMinutes()).padStart(2, '0');
-                return `${year}-${month}-${day}T${hours}:${minutes}`;
-            }
-
-            function showToast(message, type = 'info') {
-                const container = document.getElementById('toast-container');
-                const toast = document.createElement('div');
-                toast.className = `toast ${type}`;
-                toast.textContent = message;
-                container.appendChild(toast);
-                
-                // Animation d'apparition
-                setTimeout(() => {
-                    toast.classList.add('show');
-                }, 100);
-
-                // Animation de disparition
-                setTimeout(() => {
-                    toast.classList.remove('show');
-                    setTimeout(() => {
-                        if (container.contains(toast)) {
-                            container.removeChild(toast);
+                    
+                    // Validation et ajout des événements
+                    let addedCount = 0;
+                    importedEvents.forEach(eventData => {
+                        if (eventData.title && eventData.start) {
+                            // Génération d'un nouvel ID pour éviter les conflits
+                            eventData.id = generateEventId();
+                            eventData.lastModified = new Date().toISOString();
+                            
+                            calendar.addEvent(eventData);
+                            addEventToStorage(eventData);
+                            addedCount++;
                         }
-                    }, 300);
-                }, 3000);
+                    });
+                    
+                    showToast(`${addedCount} événement(s) importé(s) avec succès`, 'success');
+                } catch (error) {
+                    console.error('Erreur lors de l\'import:', error);
+                    showToast('Erreur lors de l\'import: fichier invalide', 'error');
+                }
+            };
+            
+            reader.readAsText(file);
+            
+            // Reset du input file
+            e.target.value = '';
+        }
+
+        // Effacement de tous les événements
+        function clearAllEvents() {
+            if (confirm('Êtes-vous sûr de vouloir supprimer tous les événements ? Cette action est irréversible.')) {
+                calendar.removeAllEvents();
+                events = [];
+                saveEventsToStorage();
+                showToast('Tous les événements ont été supprimés', 'info');
             }
+        }
 
-            // ========================================================================
-            // INITIALISATION
-            // ========================================================================
+        // Système de notifications toast
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            
+            const container = document.getElementById('toastContainer');
+            container.appendChild(toast);
+            
+            // Animation d'apparition
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 100);
+            
+            // Suppression automatique
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 300);
+            }, 3000);
+        }
 
-            // Charger les événements au démarrage
-            loadFromLocalStorage();
-
-            // Message de bienvenue
+        // Toast de bienvenue
+        function showWelcomeToast() {
             setTimeout(() => {
                 showToast('Calendrier prêt ! Cliquez sur une date pour ajouter un événement.', 'info');
             }, 1000);
-        });
-    </script>
+        }
 
+        // Gestion des erreurs globales
+        window.addEventListener('error', function(e) {
+            console.error('Erreur JavaScript:', e.error);
+            showToast('Une erreur inattendue s\'est produite', 'error');
+        });
+
+        // Prévention du comportement par défaut pour certains événements tactiles
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches.length > 1) {
+                e.preventDefault(); // Prévention du zoom pinch
+            }
+        }, { passive: false });
+
+        // Optimisation des performances pour iPhone
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                // Enregistrement d'un service worker basique pour la mise en cache
+                const swCode = `
+                    self.addEventListener('fetch', function(event) {
+                        event.respondWith(fetch(event.request));
+                    });
+                `;
+                const blob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(blob);
+                
+                navigator.serviceWorker.register(swUrl).catch(function(error) {
+                    console.log('Service Worker registration failed:', error);
+                });
+            });
+        }
+    </script>
 </body>
 </html>
 
